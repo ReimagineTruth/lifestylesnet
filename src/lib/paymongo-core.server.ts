@@ -101,6 +101,100 @@ function mapMethodToPaymongo(method: PaymongoCheckoutMethod, bankCode?: BankCode
   }
 }
 
+function extractQrImageUrl(attrs: PaymentIntentAttrs) {
+  return attrs.next_action?.code?.image_url ?? null;
+}
+
+/** QR Ph checkout — always method qrph, secret-key server flow (OpenPay-style). */
+export async function createQrPhPayment(
+  orderId: string,
+  amountPesos: number,
+  returnUrl: string,
+  extraMetadata?: Record<string, string>,
+): Promise<PaymongoPaymentResult> {
+  const centavos = pesosToCentavos(amountPesos);
+  if (centavos < 100) throw new Error("Minimum payment is ₱1.00");
+
+  const intentRes = await paymongoRequest<PaymentIntentAttrs>("/payment_intents", {
+    method: "POST",
+    body: JSON.stringify({
+      data: {
+        attributes: {
+          amount: centavos,
+          currency: "PHP",
+          payment_method_allowed: ["qrph"],
+          description: `Lifestyles PH order ${orderId}`,
+          statement_descriptor: "Lifestyles PH",
+          metadata: {
+            order_id: orderId,
+            purpose: "lifestyles_order",
+            method: "qr_ph",
+            ...extraMetadata,
+          },
+        },
+      },
+    }),
+  });
+
+  const intentId = intentRes.data.id;
+  const clientKey = intentRes.data.attributes.client_key;
+
+  const pmRes = await paymongoRequest<{ type: string }>("/payment_methods", {
+    method: "POST",
+    body: JSON.stringify({
+      data: { attributes: { type: "qrph" } },
+    }),
+  });
+
+  const attachRes = await paymongoRequest<PaymentIntentAttrs>(
+    `/payment_intents/${intentId}/attach`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        data: {
+          attributes: {
+            payment_method: pmRes.data.id,
+            client_key: clientKey,
+            return_url: returnUrl,
+          },
+        },
+      }),
+    },
+  );
+
+  let attrs = attachRes.data.attributes;
+  let qrImageUrl = extractQrImageUrl(attrs);
+
+  if (!qrImageUrl) {
+    const refreshed = await paymongoRequest<PaymentIntentAttrs>(
+      `/payment_intents/${intentId}`,
+      { method: "GET" },
+    );
+    attrs = refreshed.data.attributes;
+    qrImageUrl = extractQrImageUrl(attrs);
+  }
+
+  if (!qrImageUrl) {
+    throw new Error(
+      "QR code was not returned by PayMongo. Enable QR Ph in your PayMongo dashboard → Payment methods.",
+    );
+  }
+
+  return {
+    intentId,
+    clientKey,
+    status: attrs.status,
+    qrImageUrl,
+  };
+}
+
+export async function fetchQrPhImageUrl(intentId: string) {
+  const res = await paymongoRequest<PaymentIntentAttrs>(`/payment_intents/${intentId}`, {
+    method: "GET",
+  });
+  return extractQrImageUrl(res.data.attributes);
+}
+
 export async function createPaymongoPayment(
   orderId: string,
   amountPesos: number,
@@ -144,6 +238,10 @@ export async function createPaymongoPayment(
     };
   }
 
+  if (method === "qr_ph") {
+    return createQrPhPayment(orderId, amountPesos, returnUrl, extraMetadata);
+  }
+
   const mapped = mapMethodToPaymongo(method, bankCode);
 
   const intentRes = await paymongoRequest<PaymentIntentAttrs>("/payment_intents", {
@@ -182,7 +280,6 @@ export async function createPaymongoPayment(
   const pmRes = await paymongoRequest<{ type: string }>("/payment_methods", {
     method: "POST",
     body: JSON.stringify(pmBody),
-    usePublicKey: true,
   });
 
   const attachRes = await paymongoRequest<PaymentIntentAttrs>(
@@ -198,13 +295,16 @@ export async function createPaymongoPayment(
           },
         },
       }),
-      usePublicKey: true,
     },
   );
 
   const attrs = attachRes.data.attributes;
-  const qrImageUrl = attrs.next_action?.code?.image_url;
+  const qrImageUrl = extractQrImageUrl(attrs);
   const redirectUrl = attrs.next_action?.redirect?.url;
+
+  if (method !== "qr_ph" && !qrImageUrl && !redirectUrl) {
+    throw new Error("PayMongo did not return a payment URL. Try again or pick another method.");
+  }
 
   return {
     intentId,

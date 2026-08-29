@@ -1,6 +1,29 @@
 import { Link } from "@tanstack/react-router";
-import { Facebook, Youtube } from "lucide-react";
+import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import logo from "@/assets/LS_logo.png";
+
+const SOCIAL_LINKS = [
+  {
+    href: "https://www.facebook.com/profile.php?id=61594038476910",
+    label: "Facebook",
+    icon: Facebook,
+  },
+  {
+    href: "https://www.instagram.com/lifestylesph_app/",
+    label: "Instagram",
+    icon: Instagram,
+  },
+  {
+    href: "https://x.com/LifestyIesPH",
+    label: "X",
+    icon: Twitter,
+  },
+  {
+    href: "https://www.youtube.com/user/LifestylesLGN",
+    label: "YouTube",
+    icon: Youtube,
+  },
+] as const;
 
 export function Footer() {
   return (
@@ -13,20 +36,18 @@ export function Footer() {
             1989.
           </p>
           <div className="mt-4 flex gap-3">
-            <a
-              href="https://www.facebook.com"
-              aria-label="Facebook"
-              className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <Facebook className="h-4 w-4" />
-            </a>
-            <a
-              href="https://www.youtube.com"
-              aria-label="YouTube"
-              className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <Youtube className="h-4 w-4" />
-            </a>
+            {SOCIAL_LINKS.map(({ href, label, icon: Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Icon className="h-4 w-4" />
+              </a>
+            ))}
           </div>
         </div>
 

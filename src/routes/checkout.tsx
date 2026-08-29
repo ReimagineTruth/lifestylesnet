@@ -54,6 +54,13 @@ type FormState = {
   notes: string;
 };
 
+type CheckoutSummary = {
+  lines: { item: { variantId: string; qty: number }; line: NonNullable<ReturnType<typeof getVariant>> }[];
+  subtotal: number;
+  shipping: number;
+  total: number;
+};
+
 const STEPS: { id: Step; label: string }[] = [
   { id: "delivery", label: "Delivery" },
   { id: "payment", label: "Payment" },
@@ -84,6 +91,7 @@ function CheckoutPage() {
   const [bankCode, setBankCode] = useState<BankCode>("bpi");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
+  const [checkoutSummary, setCheckoutSummary] = useState<CheckoutSummary | null>(null);
   const [paid, setPaid] = useState(false);
 
   useEffect(() => {
@@ -103,6 +111,11 @@ function CheckoutPage() {
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
   const total = subtotal + shipping;
 
+  const summaryLines = checkoutSummary?.lines ?? lines;
+  const summarySubtotal = checkoutSummary?.subtotal ?? subtotal;
+  const summaryShipping = checkoutSummary?.shipping ?? shipping;
+  const summaryTotal = checkoutSummary?.total ?? total;
+
   const patchForm = useCallback((patch: Partial<FormState>) => {
     setForm((prev) => ({ ...prev, ...patch }));
     setErrors((prev) => {
@@ -119,6 +132,7 @@ function CheckoutPage() {
         .then((result) => {
           if (result.paid) {
             setPaid(true);
+            clear();
             clearOrderQrPhSession();
             setStep("done");
             toast.success("Payment confirmed! Salamat po.");
@@ -139,7 +153,7 @@ function CheckoutPage() {
     );
   }
 
-  if (lines.length === 0 && step !== "done") {
+  if (lines.length === 0 && step !== "done" && step !== "qr") {
     return (
       <div className="container-page py-24 text-center">
         <h1 className="text-3xl font-semibold">Your cart is empty</h1>
@@ -179,6 +193,7 @@ function CheckoutPage() {
 
     setSubmitting(true);
     const v = schema.parse(form);
+    const orderSnapshot: CheckoutSummary = { lines, subtotal, shipping, total };
 
     void createOrder({
       data: {
@@ -215,21 +230,28 @@ function CheckoutPage() {
     })
       .then((result) => {
         saveCustomerEmail(v.email);
-        clear();
+        setCheckoutSummary(orderSnapshot);
         setOrderId(result.order.id);
 
         const { order, payment } = result;
 
         if (payment?.redirectUrl) {
+          clear();
           window.location.href = payment.redirectUrl;
           return;
         }
         if (payment?.checkoutUrl) {
+          clear();
           window.location.href = payment.checkoutUrl;
           return;
         }
 
-        if (payment?.qrImageUrl) {
+        if (payChoice === "qr_ph") {
+          if (!payment?.qrImageUrl) {
+            throw new Error(
+              "QR code was not returned by PayMongo. Enable QR Ph in your PayMongo dashboard.",
+            );
+          }
           const hint = qrScanHint(qrProvider);
           saveOrderQrPhSession({
             orderId: order.id,
@@ -246,6 +268,7 @@ function CheckoutPage() {
           return;
         }
 
+        clear();
         toast.success(tl.toast.orderPlaced(order.id));
         setPaid(true);
         setStep("done");
@@ -284,7 +307,7 @@ function CheckoutPage() {
             <section className="rounded-xl border border-border bg-card p-6">
               <h2 className="text-lg font-semibold">Delivery address</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Search on the map, then confirm your details.
+                Select region, province, city, and barangay, then enter your street details.
               </p>
               <div className="mt-6">
                 <DeliveryAddressForm values={form} errors={errors} onChange={patchForm} />
@@ -421,23 +444,36 @@ function CheckoutPage() {
             </section>
           )}
 
-          {step === "qr" && qrImageUrl && orderId && (
+          {step === "qr" && orderId && (
             <section className="rounded-xl border border-border bg-card p-6 text-center">
               <div className="flex items-center justify-center gap-2 font-semibold">
                 <QrCode className="h-5 w-5" />
-                Scan to pay {peso(total)}
+                Scan to pay {peso(summaryTotal)}
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{qrScanHint(qrProvider)}</p>
-              <img
-                src={qrImageUrl}
-                alt="QR Ph payment code"
-                className="mx-auto mt-6 h-64 w-64 rounded-lg border border-border bg-white p-2"
-              />
+              {qrImageUrl ? (
+                <img
+                  src={qrImageUrl}
+                  alt="QR Ph payment code"
+                  className="mx-auto mt-6 h-64 w-64 rounded-lg border border-border bg-white p-2"
+                />
+              ) : (
+                <div className="mx-auto mt-6 flex h-64 w-64 items-center justify-center rounded-lg border border-border bg-muted/30">
+                  <Loader2 className="h-8 w-8 animate-spin text-brand" />
+                </div>
+              )}
               <p className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Waiting for payment · Order {orderId}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">QR expires in ~30 minutes</p>
+              <Link
+                to="/order/$id"
+                params={{ id: orderId }}
+                className="mt-4 inline-block text-sm font-medium text-brand hover:underline"
+              >
+                Open full-screen QR on order page
+              </Link>
             </section>
           )}
 
@@ -468,7 +504,12 @@ function CheckoutPage() {
           )}
         </div>
 
-        <OrderSummary lines={lines} subtotal={subtotal} shipping={shipping} total={total} />
+        <OrderSummary
+          lines={summaryLines}
+          subtotal={summarySubtotal}
+          shipping={summaryShipping}
+          total={summaryTotal}
+        />
       </div>
     </div>
   );

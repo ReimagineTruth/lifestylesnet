@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { confirmPaymongoPaymentFn } from "@/lib/paymongo.server";
+import { confirmPaymongoPaymentFn, fetchOrderQrFn } from "@/lib/paymongo.server";
 import { loadOrderQrPhSession, legacyQrKey } from "@/lib/qrPhPaySession";
 import { getOrderFn } from "@/lib/orders.server";
 import type { PaymentMethod } from "@/lib/orders";
@@ -48,21 +48,38 @@ function OrderPage() {
   const { id } = Route.useParams();
   const search = Route.useSearch();
   const confirmPayment = useServerFn(confirmPaymongoPaymentFn);
+  const fetchOrderQr = useServerFn(fetchOrderQrFn);
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [paid, setPaid] = useState(order?.status === "paid");
 
   useEffect(() => {
     if (!order) return;
+    setPaid(order.status === "paid");
+
     const session = loadOrderQrPhSession();
     const legacy = sessionStorage.getItem(legacyQrKey(order.id));
     const url =
       session?.orderId === order.id
         ? session.qrImageUrl
         : legacy ?? null;
-    if (url) setQrImage(url);
-    setPaid(order.status === "paid");
-  }, [order]);
+    if (url) {
+      setQrImage(url);
+      return;
+    }
+
+    if (
+      order.paymentMethod === "qr_ph" &&
+      order.status !== "paid" &&
+      order.paymongoIntentId
+    ) {
+      void fetchOrderQr({ data: order.id })
+        .then(({ qrImageUrl }) => {
+          if (qrImageUrl) setQrImage(qrImageUrl);
+        })
+        .catch(() => {});
+    }
+  }, [order, fetchOrderQr]);
 
   useEffect(() => {
     if (!order || order.paymentMethod === "cod" || paid) return;
