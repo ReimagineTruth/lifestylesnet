@@ -427,4 +427,3 @@ export const catalogProducts: Product[] = [
     directions: "Add to cart and complete checkout to test payments.",
   },
 ];
-

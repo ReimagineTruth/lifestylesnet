@@ -1,6 +1,11 @@
 import type { ProductVariantWithImage, ProductWithImages } from "./catalog-data";
 
-export type { Product, ProductVariant, ProductVariantWithImage, ProductWithImages } from "./catalog-data";
+export type {
+  Product,
+  ProductVariant,
+  ProductVariantWithImage,
+  ProductWithImages,
+} from "./catalog-data";
 export {
   catalogProducts,
   products,

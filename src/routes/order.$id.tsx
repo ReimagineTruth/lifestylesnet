@@ -62,20 +62,13 @@ function OrderPage() {
 
     const session = loadOrderQrPhSession();
     const legacy = sessionStorage.getItem(legacyQrKey(order.id));
-    const url =
-      session?.orderId === order.id
-        ? session.qrImageUrl
-        : legacy ?? null;
+    const url = session?.orderId === order.id ? session.qrImageUrl : (legacy ?? null);
     if (url) {
       setQrImage(url);
       return;
     }
 
-    if (
-      order.paymentMethod === "qr_ph" &&
-      order.status !== "paid" &&
-      order.paymongoIntentId
-    ) {
+    if (order.paymentMethod === "qr_ph" && order.status !== "paid" && order.paymongoIntentId) {
       void fetchOrderQr({ data: order.id })
         .then(({ qrImageUrl }) => {
           if (qrImageUrl) setQrImage(qrImageUrl);
@@ -140,8 +133,7 @@ function OrderPage() {
     );
   }
 
-  const awaitingPayment =
-    order.paymentMethod !== "cod" && !paid && order.status !== "cancelled";
+  const awaitingPayment = order.paymentMethod !== "cod" && !paid && order.status !== "cancelled";
 
   return (
     <div className="container-page max-w-3xl py-16">
@@ -166,9 +158,9 @@ function OrderPage() {
               ? "I-scan ang QR code sa ibaba gamit ang GCash, Maya, o anumang QR Ph app."
               : order.paymentMethod === "paypal"
                 ? "Kumpletohin ang bayad sa PayPal. Awtomatikong mag-u-update ang status pag na-confirm."
-              : search.payment === "return"
-                ? "Bumalik ka mula sa bangko o e-wallet. Kino-confirm namin ang bayad…"
-                : "Kumpletohin ang bayad sa PayMongo. Awtomatikong mag-u-update ang status."}
+                : search.payment === "return"
+                  ? "Bumalik ka mula sa bangko o e-wallet. Kino-confirm namin ang bayad…"
+                  : "Kumpletohin ang bayad sa PayMongo. Awtomatikong mag-u-update ang status."}
           </p>
           {qrImage && (
             <div className="mt-4 flex flex-col items-center gap-3">
@@ -237,7 +229,10 @@ function OrderPage() {
 
         <ul className="mt-8 divide-y divide-border border-t border-border">
           {order.lines.map((l) => (
-            <li key={`${l.variantId ?? l.slug}-${l.name}`} className="flex justify-between py-3 text-sm">
+            <li
+              key={`${l.variantId ?? l.slug}-${l.name}`}
+              className="flex justify-between py-3 text-sm"
+            >
               <span className="text-muted-foreground">
                 {l.name} × {l.qty}
               </span>

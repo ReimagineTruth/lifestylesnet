@@ -1,6 +1,6 @@
 # Lifestyles PH Store
 
-https://www.lifestyles.net/ https://www.lifestyles.net/ph-en/ https://www.lifestyles.net/ph-en/pr_intra.php  https://www.lifestyles.net/ph-en/pr_nutriaplus.php  https://www.lifestyles.net/ph-en/pr_cl.php https://www.lifestyles.net/ph-en/pr_fibrelife.php make this a profesional website focus un philippines for now white theme style shopyfy with admin control orders details payment etc full complete sql database backend same name make profesional
+https://www.lifestyles.net/ https://www.lifestyles.net/ph-en/ https://www.lifestyles.net/ph-en/pr_intra.php https://www.lifestyles.net/ph-en/pr_nutriaplus.php https://www.lifestyles.net/ph-en/pr_cl.php https://www.lifestyles.net/ph-en/pr_fibrelife.php make this a profesional website focus un philippines for now white theme style shopyfy with admin control orders details payment etc full complete sql database backend same name make profesional
 
 This project was built with [Lovable](https://lovable.dev).
 

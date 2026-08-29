@@ -6,7 +6,8 @@ import * as schema from "./schema";
 import { seedIfEmpty } from "./seed";
 
 const DB_DIR = path.join(process.cwd(), "data");
-const DB_PATH = process.env["DATABASE_URL"]?.replace(/^file:/, "") ?? path.join(DB_DIR, "lifestyles.db");
+const DB_PATH =
+  process.env["DATABASE_URL"]?.replace(/^file:/, "") ?? path.join(DB_DIR, "lifestyles.db");
 
 let sqlite: Database.Database | undefined;
 let dbInstance: ReturnType<typeof drizzle<typeof schema>> | undefined;

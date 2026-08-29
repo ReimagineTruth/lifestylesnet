@@ -238,8 +238,7 @@ export function DeliveryAddressForm({ values, errors, onChange }: Props) {
 
       <p className="flex items-start gap-2 text-xs text-muted-foreground">
         <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-        Select your location from the official Philippine address list — no map or API key
-        needed.
+        Select your location from the official Philippine address list — no map or API key needed.
       </p>
     </div>
   );

@@ -19,16 +19,14 @@ function rowToProduct(
     benefits: JSON.parse(row.benefits) as string[],
     ingredients: row.ingredients,
     directions: row.directions,
-    variants: variants.map(
-      (v): ProductVariant => ({
-        id: v.id,
-        code: v.code,
-        label: v.label,
-        points: v.points,
-        price: v.price,
-        size: v.size,
-      }),
-    ),
+    variants: variants.map((v): ProductVariant => ({
+      id: v.id,
+      code: v.code,
+      label: v.label,
+      points: v.points,
+      price: v.price,
+      size: v.size,
+    })),
   };
 }
 

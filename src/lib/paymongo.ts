@@ -1,12 +1,5 @@
 export type PaymongoCheckoutMethod =
-  | "qr_ph"
-  | "gcash"
-  | "maya"
-  | "grab_pay"
-  | "shopee_pay"
-  | "billease"
-  | "bank"
-  | "card";
+  "qr_ph" | "gcash" | "maya" | "grab_pay" | "shopee_pay" | "billease" | "bank" | "card";
 
 export type BankCode = "bpi" | "ubp" | "bdo" | "landbank" | "metrobank";
 

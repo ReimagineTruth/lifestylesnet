@@ -157,8 +157,7 @@ export async function capturePayPalCheckoutOrder(paypalOrderId: string) {
   const existing = await fetchPayPalOrder(paypalOrderId);
 
   if (existing.status === "COMPLETED") {
-    const captureId =
-      existing.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? paypalOrderId;
+    const captureId = existing.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? paypalOrderId;
     return { status: existing.status, captureId, paid: true };
   }
 

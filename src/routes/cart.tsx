@@ -24,10 +24,7 @@ function CartPage() {
     .map((i) => ({ item: i, line: getVariant(i.variantId) }))
     .filter((l) => l.line);
 
-  const subtotal = lines.reduce(
-    (sum, l) => sum + l.line!.variant.price * l.item.qty,
-    0,
-  );
+  const subtotal = lines.reduce((sum, l) => sum + l.line!.variant.price * l.item.qty, 0);
   const shipping = subtotal === 0 || subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
 
   if (!ready) {

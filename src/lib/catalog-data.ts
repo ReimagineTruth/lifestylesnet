@@ -1,7 +1,4 @@
-import {
-  bundleImageUrls,
-  productImageUrls,
-} from "@/lib/catalog-image-urls";
+import { bundleImageUrls, productImageUrls } from "@/lib/catalog-image-urls";
 import {
   catalogProducts as seedCatalog,
   type Product,
@@ -80,8 +77,8 @@ export function enrichProduct(product: Product): ProductWithImages {
     benefits: resolved.benefits,
     ingredients: resolved.ingredients,
     directions: resolved.directions,
-    resources: resolved.resources,
-    faqs: resolved.faqs,
+    ...(resolved.resources != null ? { resources: resolved.resources } : {}),
+    ...(resolved.faqs != null ? { faqs: resolved.faqs } : {}),
     variants: product.variants.map((variant) => {
       const catalogVariant = findCatalogVariant(resolved, variant);
       if (!catalogVariant) return resolveVariant(variant);
@@ -122,9 +119,7 @@ export function variantCartLabel(product: ProductWithImages, variant: ProductVar
 }
 
 export function allVariants() {
-  return products.flatMap((product) =>
-    product.variants.map((variant) => ({ product, variant })),
-  );
+  return products.flatMap((product) => product.variants.map((variant) => ({ product, variant })));
 }
 
 export function migrateLegacyCartId(id: string) {

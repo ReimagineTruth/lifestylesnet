@@ -29,10 +29,10 @@ function TermsPage() {
       <LegalSection id="about" title="1. About us">
         <p>
           The Service is operated by Lifestyles Philippines (&quot;we&quot;, &quot;us&quot;, or
-          &quot;our&quot;), an independent distributor of Lifestyles Global Network wellness products
-          in the Philippines. Our registered office is in Makati City, Metro Manila. You may reach
-          us at{" "}
-          <a href="mailto:support@lifestyles.ph">support@lifestyles.ph</a> or (02) 8888 0000.
+          &quot;our&quot;), an independent distributor of Lifestyles Global Network wellness
+          products in the Philippines. Our registered office is in Makati City, Metro Manila. You
+          may reach us at <a href="mailto:support@lifestyles.ph">support@lifestyles.ph</a> or (02)
+          8888 0000.
         </p>
       </LegalSection>
 
@@ -43,19 +43,20 @@ function TermsPage() {
         </p>
         <ul>
           <li>
-            Our products are <strong>not intended to diagnose, treat, cure, or prevent any disease</strong>.
+            Our products are{" "}
+            <strong>not intended to diagnose, treat, cure, or prevent any disease</strong>.
           </li>
           <li>
-            No approved therapeutic claims are made for products sold in the Philippines through this
-            site.
+            No approved therapeutic claims are made for products sold in the Philippines through
+            this site.
           </li>
           <li>
             Individual results vary. Consult a qualified healthcare professional before use if you
             are pregnant, nursing, taking medication, or have a medical condition.
           </li>
           <li>
-            Do not use any product if you are allergic to an ingredient listed on the label or product
-            page.
+            Do not use any product if you are allergic to an ingredient listed on the label or
+            product page.
           </li>
         </ul>
         <p>
@@ -80,7 +81,10 @@ function TermsPage() {
             An order confirmation email does not guarantee acceptance until we confirm shipment or
             payment, as applicable.
           </li>
-          <li>Order reference numbers begin with &quot;LS-&quot; and can be tracked on your account or order page.</li>
+          <li>
+            Order reference numbers begin with &quot;LS-&quot; and can be tracked on your account or
+            order page.
+          </li>
         </ul>
       </LegalSection>
 
@@ -94,14 +98,14 @@ function TermsPage() {
         </ul>
         <p>
           Online payments are processed by third-party providers (PayMongo, PayPal). We do not store
-          full card numbers on our servers. By paying online, you also agree to the applicable
-          terms of the payment provider. Orders paid online remain <strong>pending</strong> until
-          payment is confirmed; QR Ph and redirect methods must be completed within the time limit
-          shown at checkout (typically about 30 minutes for QR codes).
+          full card numbers on our servers. By paying online, you also agree to the applicable terms
+          of the payment provider. Orders paid online remain <strong>pending</strong> until payment
+          is confirmed; QR Ph and redirect methods must be completed within the time limit shown at
+          checkout (typically about 30 minutes for QR codes).
         </p>
         <p>
-          If payment fails or expires, your order may remain pending or be cancelled. Contact support
-          if you were charged but your order status did not update.
+          If payment fails or expires, your order may remain pending or be cancelled. Contact
+          support if you were charged but your order status did not update.
         </p>
       </LegalSection>
 
@@ -168,7 +172,9 @@ function TermsPage() {
       <LegalSection id="conduct" title="8. Acceptable use">
         <p>You agree not to:</p>
         <ul>
-          <li>Use the site for unlawful purposes or to submit false orders or payment information</li>
+          <li>
+            Use the site for unlawful purposes or to submit false orders or payment information
+          </li>
           <li>Attempt to interfere with site security, payment systems, or other users</li>
           <li>Scrape, copy, or republish site content without permission</li>
           <li>Resell products in violation of applicable distributor or brand policies</li>

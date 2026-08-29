@@ -38,7 +38,9 @@ function publicKey() {
 }
 
 export function siteUrl() {
-  return process.env["PUBLIC_SITE_URL"] ?? process.env["VITE_PUBLIC_SITE_URL"] ?? "http://localhost:8080";
+  return (
+    process.env["PUBLIC_SITE_URL"] ?? process.env["VITE_PUBLIC_SITE_URL"] ?? "http://localhost:8080"
+  );
 }
 
 function authHeader(key: string) {
@@ -58,7 +60,10 @@ async function paymongoRequest<T>(
       ...(init.headers ?? {}),
     },
   });
-  const body = (await res.json()) as { data?: PaymongoResource<T>["data"]; errors?: { detail?: string }[] };
+  const body = (await res.json()) as {
+    data?: PaymongoResource<T>["data"];
+    errors?: { detail?: string }[];
+  };
   if (!res.ok) {
     const msg = body.errors?.[0]?.detail ?? `PayMongo error (${res.status})`;
     throw new Error(msg);
@@ -166,10 +171,9 @@ export async function createQrPhPayment(
   let qrImageUrl = extractQrImageUrl(attrs);
 
   if (!qrImageUrl) {
-    const refreshed = await paymongoRequest<PaymentIntentAttrs>(
-      `/payment_intents/${intentId}`,
-      { method: "GET" },
-    );
+    const refreshed = await paymongoRequest<PaymentIntentAttrs>(`/payment_intents/${intentId}`, {
+      method: "GET",
+    });
     attrs = refreshed.data.attributes;
     qrImageUrl = extractQrImageUrl(attrs);
   }

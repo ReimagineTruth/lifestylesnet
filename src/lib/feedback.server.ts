@@ -33,11 +33,17 @@ async function ensureThread(threadId: string, name?: string, email?: string) {
     createdAt: now,
     updatedAt: now,
   });
-  return { id: threadId, customerName: name ?? null, customerEmail: email ?? null, createdAt: now, updatedAt: now };
+  return {
+    id: threadId,
+    customerName: name ?? null,
+    customerEmail: email ?? null,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 export const getThreadMessagesFn = createServerFn({ method: "GET" })
-  .inputValidator((threadId: string) => threadId)
+  .validator((threadId: string) => threadId)
   .handler(async ({ data: threadId }) => {
     const db = await ensureDbReady();
     const rows = await db
@@ -57,7 +63,7 @@ const sendMessageInput = z.object({
 });
 
 export const sendFeedbackMessageFn = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => sendMessageInput.parse(data))
+  .validator((data: unknown) => sendMessageInput.parse(data))
   .handler(async ({ data }) => {
     const db = await ensureDbReady();
     await ensureThread(data.threadId, data.name, data.email);
@@ -87,14 +93,14 @@ export const sendFeedbackMessageFn = createServerFn({ method: "POST" })
   });
 
 export const listFeedbackThreadsFn = createServerFn({ method: "GET" })
-  .inputValidator((token: string) => token)
+  .validator((token: string) => token)
   .handler(async ({ data: token }) => {
     if (!(await isAdmin(token))) throw new Error("Unauthorized");
     return dbListFeedbackThreads();
   });
 
 export const listAllFeedbackMessagesFn = createServerFn({ method: "GET" })
-  .inputValidator((token: string) => token)
+  .validator((token: string) => token)
   .handler(async ({ data: token }) => {
     if (!(await isAdmin(token))) throw new Error("Unauthorized");
     const db = await ensureDbReady();

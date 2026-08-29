@@ -38,7 +38,11 @@ function AdminPage() {
   }, [verifyAdmin]);
 
   if (!authReady) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
   }
 
   if (!token) {
@@ -57,7 +61,9 @@ function AdminPage() {
               .catch(() => toast.error("Invalid admin password"));
           }}
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Lifestyles Philippines</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+            Lifestyles Philippines
+          </p>
           <h1 className="mt-2 text-3xl font-semibold">Admin Portal</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Full control over orders, payments, customers, feedback and catalogue.

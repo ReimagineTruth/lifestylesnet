@@ -3,7 +3,11 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { capturePayPalPaymentFn, createPayPalOrderFn, getPayPalConfigFn } from "@/lib/paypal.server";
+import {
+  capturePayPalPaymentFn,
+  createPayPalOrderFn,
+  getPayPalConfigFn,
+} from "@/lib/paypal.server";
 import { paypalClientConfig } from "@/lib/paypal";
 import { peso } from "@/lib/products";
 

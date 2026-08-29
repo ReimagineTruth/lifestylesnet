@@ -38,11 +38,13 @@ function OpportunityPage() {
         {[
           {
             title: "Quality products",
-            description: "Offer Intra, Nutria Plus, CardioLife and FibreLife — products people trust.",
+            description:
+              "Offer Intra, Nutria Plus, CardioLife and FibreLife — products people trust.",
           },
           {
             title: "Training & support",
-            description: "Access product knowledge, business tools and a community of distributors.",
+            description:
+              "Access product knowledge, business tools and a community of distributors.",
           },
           {
             title: "Flexible income",

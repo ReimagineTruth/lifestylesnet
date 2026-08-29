@@ -24,7 +24,7 @@ const createInput = z.object({
 });
 
 export const createPayPalOrderFn = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => createInput.parse(data))
+  .validator((data: unknown) => createInput.parse(data))
   .handler(async ({ data }) => {
     const db = await ensureDbReady();
     const [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, data.orderId));
@@ -49,7 +49,7 @@ const captureInput = z.object({
 });
 
 export const capturePayPalPaymentFn = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => captureInput.parse(data))
+  .validator((data: unknown) => captureInput.parse(data))
   .handler(async ({ data }) => {
     const db = await ensureDbReady();
     const [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, data.orderId));
@@ -63,7 +63,7 @@ export const capturePayPalPaymentFn = createServerFn({ method: "POST" })
       await markOrderPaidByPayPal({
         orderId: data.orderId,
         paypalOrderId,
-        captureId: captureId ?? undefined,
+        ...(captureId ? { captureId } : {}),
       });
       return { paid: true, status: "paid" };
     }

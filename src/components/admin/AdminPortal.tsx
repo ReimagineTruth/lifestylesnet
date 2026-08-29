@@ -9,7 +9,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import type { AdminDashboardStats, Order, OrderStatus } from "@/lib/orders";
@@ -17,11 +17,7 @@ import { useAllFeedback } from "@/hooks/use-feedback";
 import { tl } from "@/lib/tagalog";
 import { Switch } from "@/components/ui/switch";
 import { allVariants, isTestProductSlug, peso } from "@/lib/products";
-import {
-  getAdminDashboardFn,
-  listAllOrdersFn,
-  updateOrderAdminFn,
-} from "@/lib/orders.server";
+import { getAdminDashboardFn, listAllOrdersFn, updateOrderAdminFn } from "@/lib/orders.server";
 import { getTestProductVisibleFn, setTestProductVisibleFn } from "@/lib/settings.server";
 import { listFeedbackThreadsFn, sendFeedbackMessageFn } from "@/lib/feedback.server";
 
@@ -80,7 +76,9 @@ export function AdminPortal({ token, onSignOut }: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
-  const [paymentFilter, setPaymentFilter] = useState<(typeof paymentMethods)[number] | "all">("all");
+  const [paymentFilter, setPaymentFilter] = useState<(typeof paymentMethods)[number] | "all">(
+    "all",
+  );
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editStatus, setEditStatus] = useState<OrderStatus>("pending");
   const [editReference, setEditReference] = useState("");
@@ -89,7 +87,7 @@ export function AdminPortal({ token, onSignOut }: Props) {
 
   const { data: allFeedback = [], refetch: refetchFeedback } = useAllFeedback(token);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const [nextOrders, nextStats, nextThreads] = await Promise.all([
@@ -113,13 +111,13 @@ export function AdminPortal({ token, onSignOut }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, listOrders, getDashboard, listThreads]);
 
   useEffect(() => {
     void refresh();
     const interval = setInterval(() => void refresh(), 10000);
     return () => clearInterval(interval);
-  }, [token, listOrders, getDashboard, listThreads]);
+  }, [refresh]);
 
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -139,7 +137,14 @@ export function AdminPortal({ token, onSignOut }: Props) {
   const customers = useMemo(() => {
     const map = new Map<
       string,
-      { email: string; name: string; phone: string; orders: number; spent: number; lastOrder: string }
+      {
+        email: string;
+        name: string;
+        phone: string;
+        orders: number;
+        spent: number;
+        lastOrder: string;
+      }
     >();
     for (const o of orders) {
       const key = o.customer.email.toLowerCase();
@@ -295,10 +300,15 @@ export function AdminPortal({ token, onSignOut }: Props) {
             />
           )}
 
-          {tab === "customers" && <CustomersTab customers={customers} onSelectEmail={(email) => {
-            setTab("orders");
-            setSearch(email);
-          }} />}
+          {tab === "customers" && (
+            <CustomersTab
+              customers={customers}
+              onSelectEmail={(email) => {
+                setTab("orders");
+                setSearch(email);
+              }}
+            />
+          )}
 
           {tab === "feedback" && (
             <FeedbackTab
@@ -372,15 +382,37 @@ function OverviewTab({
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="font-semibold">Payment methods</h2>
           <dl className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between"><dt>COD</dt><dd>{stats.byPayment.cod}</dd></div>
-            <div className="flex justify-between"><dt>QR Ph</dt><dd>{stats.byPayment.qr_ph}</dd></div>
-            <div className="flex justify-between"><dt>GCash</dt><dd>{stats.byPayment.gcash}</dd></div>
-            <div className="flex justify-between"><dt>Maya</dt><dd>{stats.byPayment.maya}</dd></div>
-            <div className="flex justify-between"><dt>Online banking</dt><dd>{stats.byPayment.bank}</dd></div>
-            <div className="flex justify-between"><dt>Card</dt><dd>{stats.byPayment.card}</dd></div>
-            <div className="flex justify-between"><dt>PayPal</dt><dd>{stats.byPayment.paypal}</dd></div>
+            <div className="flex justify-between">
+              <dt>COD</dt>
+              <dd>{stats.byPayment.cod}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>QR Ph</dt>
+              <dd>{stats.byPayment.qr_ph}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>GCash</dt>
+              <dd>{stats.byPayment.gcash}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>Maya</dt>
+              <dd>{stats.byPayment.maya}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>Online banking</dt>
+              <dd>{stats.byPayment.bank}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>Card</dt>
+              <dd>{stats.byPayment.card}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>PayPal</dt>
+              <dd>{stats.byPayment.paypal}</dd>
+            </div>
             <div className="flex justify-between border-t border-border pt-2 font-semibold">
-              <dt>Cancelled</dt><dd>{stats.cancelled}</dd>
+              <dt>Cancelled</dt>
+              <dd>{stats.cancelled}</dd>
             </div>
           </dl>
         </div>
@@ -392,7 +424,11 @@ function OverviewTab({
             ) : (
               orders.map((o) => (
                 <li key={o.id} className="flex items-center justify-between gap-2 text-sm">
-                  <button type="button" onClick={() => onViewOrder(o)} className="font-medium hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => onViewOrder(o)}
+                    className="font-medium hover:underline"
+                  >
                     {o.id}
                   </button>
                   <span className="capitalize text-muted-foreground">{o.status}</span>
@@ -461,7 +497,9 @@ function OrdersTab({
         >
           <option value="all">All statuses</option>
           {statuses.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>
+              {s}
+            </option>
           ))}
         </select>
         <select
@@ -471,7 +509,9 @@ function OrdersTab({
         >
           <option value="all">All payments</option>
           {paymentMethods.map((p) => (
-            <option key={p} value={p}>{paymentMethodLabels[p]}</option>
+            <option key={p} value={p}>
+              {paymentMethodLabels[p]}
+            </option>
           ))}
         </select>
       </div>
@@ -555,7 +595,9 @@ function CustomersTab({
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold">Customers</h1>
-        <p className="mt-1 text-muted-foreground">{customers.length} unique customer(s) from orders.</p>
+        <p className="mt-1 text-muted-foreground">
+          {customers.length} unique customer(s) from orders.
+        </p>
       </div>
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-left text-sm">
@@ -622,7 +664,9 @@ function FeedbackTab({
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold">Feedback</h1>
-        <p className="mt-1 text-muted-foreground">Tagalog customer messages — synced from database.</p>
+        <p className="mt-1 text-muted-foreground">
+          Tagalog customer messages — synced from database.
+        </p>
       </div>
       {threads.length === 0 ? (
         <p className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground">
@@ -657,7 +701,9 @@ function FeedbackTab({
                   <div
                     key={m.id}
                     className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                      m.from === "user" ? "ml-auto bg-brand text-brand-foreground" : "mr-auto bg-muted"
+                      m.from === "user"
+                        ? "ml-auto bg-brand text-brand-foreground"
+                        : "mr-auto bg-muted"
                     }`}
                   >
                     <p>{m.text}</p>
@@ -737,7 +783,9 @@ function CatalogueTab({ orders, token }: { orders: Order[]; token: string }) {
               .then(({ visible }) => {
                 setTestProductVisible(visible);
                 toast.success(
-                  visible ? "Test product is visible on the shop." : "Test product hidden from shop.",
+                  visible
+                    ? "Test product is visible on the shop."
+                    : "Test product hidden from shop.",
                 );
               })
               .catch((err: Error) => toast.error(err.message || "Could not update setting."))
@@ -768,7 +816,10 @@ function CatalogueTab({ orders, token }: { orders: Order[]; token: string }) {
               const units = soldLines.reduce((n, l) => n + l.qty, 0);
               const rev = soldLines.reduce((n, l) => n + l.qty * l.price, 0);
               return (
-                <tr key={variant.id} className={isTestProductSlug(product.slug) ? "bg-amber-50/50" : ""}>
+                <tr
+                  key={variant.id}
+                  className={isTestProductSlug(product.slug) ? "bg-amber-50/50" : ""}
+                >
                   <td className="px-4 py-3 font-medium">
                     {product.name}
                     {isTestProductSlug(product.slug) && (
@@ -776,7 +827,9 @@ function CatalogueTab({ orders, token }: { orders: Order[]; token: string }) {
                         Test
                       </span>
                     )}
-                    <span className="block text-xs font-normal text-muted-foreground">{variant.label}</span>
+                    <span className="block text-xs font-normal text-muted-foreground">
+                      {variant.label}
+                    </span>
                   </td>
                   <td className="px-4 py-3 uppercase text-muted-foreground">{variant.code}</td>
                   <td className="px-4 py-3">{variant.points}</td>
@@ -840,7 +893,9 @@ function OrderDrawer({
 
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           <section>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Customer</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Customer
+            </h3>
             <p className="mt-2 text-sm">
               {order.customer.name}
               <br />
@@ -856,7 +911,9 @@ function OrderDrawer({
           </section>
 
           <section>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Items</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Items
+            </h3>
             <ul className="mt-2 space-y-2 text-sm">
               {order.lines.map((l) => (
                 <li key={`${l.variantId}-${l.name}`} className="flex justify-between gap-2">
@@ -869,9 +926,18 @@ function OrderDrawer({
               ))}
             </ul>
             <dl className="mt-4 space-y-1 border-t border-border pt-4 text-sm">
-              <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{peso(order.subtotal)}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Shipping</dt><dd>{order.shipping === 0 ? "Free" : peso(order.shipping)}</dd></div>
-              <div className="flex justify-between font-semibold"><dt>Total</dt><dd>{peso(order.total)}</dd></div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Subtotal</dt>
+                <dd>{peso(order.subtotal)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Shipping</dt>
+                <dd>{order.shipping === 0 ? "Free" : peso(order.shipping)}</dd>
+              </div>
+              <div className="flex justify-between font-semibold">
+                <dt>Total</dt>
+                <dd>{peso(order.total)}</dd>
+              </div>
             </dl>
           </section>
 
@@ -888,7 +954,9 @@ function OrderDrawer({
                 className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm capitalize"
               >
                 {statuses.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </select>
             </label>
@@ -927,9 +995,19 @@ function OrderDrawer({
   );
 }
 
-function StatCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function StatCard({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
   return (
-    <div className={`rounded-xl border border-border p-5 ${highlight ? "bg-brand-soft" : "bg-card"}`}>
+    <div
+      className={`rounded-xl border border-border p-5 ${highlight ? "bg-brand-soft" : "bg-card"}`}
+    >
       <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
@@ -945,7 +1023,9 @@ function StatusBadge({ status }: { status: OrderStatus }) {
     cancelled: "bg-red-100 text-red-800",
   };
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${colors[status]}`}>
+    <span
+      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${colors[status]}`}
+    >
       {status}
     </span>
   );

@@ -39,7 +39,7 @@ export const getTestProductVisibleFn = createServerFn({ method: "GET" }).handler
 });
 
 export const setTestProductVisibleFn = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => {
+  .validator((data: unknown) => {
     const parsed = data as { token?: string; visible?: boolean };
     if (typeof parsed.token !== "string" || typeof parsed.visible !== "boolean") {
       throw new Error("Invalid input");

@@ -56,7 +56,10 @@ type FormState = {
 };
 
 type CheckoutSummary = {
-  lines: { item: { variantId: string; qty: number }; line: NonNullable<ReturnType<typeof getVariant>> }[];
+  lines: {
+    item: { variantId: string; qty: number };
+    line: NonNullable<ReturnType<typeof getVariant>>;
+  }[];
   subtotal: number;
   shipping: number;
   total: number;
@@ -105,7 +108,9 @@ function CheckoutPage() {
   const lines = items
     .map((i) => ({ item: i, line: getVariant(i.variantId) }))
     .filter(
-      (l): l is { item: (typeof items)[number]; line: NonNullable<ReturnType<typeof getVariant>> } =>
+      (
+        l,
+      ): l is { item: (typeof items)[number]; line: NonNullable<ReturnType<typeof getVariant>> } =>
         Boolean(l.line),
     );
   const subtotal = lines.reduce((sum, l) => sum + l.line!.variant.price * l.item.qty, 0);
@@ -144,7 +149,7 @@ function CheckoutPage() {
     poll();
     const interval = setInterval(poll, 4000);
     return () => clearInterval(interval);
-  }, [step, orderId, paid, confirmPayment]);
+  }, [step, orderId, paid, confirmPayment, clear]);
 
   if (!ready) {
     return (
@@ -360,7 +365,9 @@ function CheckoutPage() {
                   />
                   <span>
                     <span className="block text-sm font-semibold">Cash on delivery</span>
-                    <span className="text-sm text-muted-foreground">Pay when your order arrives.</span>
+                    <span className="text-sm text-muted-foreground">
+                      Pay when your order arrives.
+                    </span>
                   </span>
                 </label>
 
@@ -556,7 +563,10 @@ function OrderSummary({
   shipping,
   total,
 }: {
-  lines: { item: { variantId: string; qty: number }; line: NonNullable<ReturnType<typeof getVariant>> }[];
+  lines: {
+    item: { variantId: string; qty: number };
+    line: NonNullable<ReturnType<typeof getVariant>>;
+  }[];
   subtotal: number;
   shipping: number;
   total: number;

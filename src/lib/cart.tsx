@@ -72,9 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => {
       const found = prev.find((i) => i.variantId === id);
       if (found) {
-        return prev.map((i) =>
-          i.variantId === id ? { ...i, qty: i.qty + qty } : i,
-        );
+        return prev.map((i) => (i.variantId === id ? { ...i, qty: i.qty + qty } : i));
       }
       return [...prev, { variantId: id, qty }];
     });

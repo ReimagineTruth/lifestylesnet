@@ -83,10 +83,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Lifestyles Philippines" },
-      { name: "description", content: "Live Better. Every Day. Botanical wellness products delivered nationwide in the Philippines." },
+      {
+        name: "description",
+        content:
+          "Live Better. Every Day. Botanical wellness products delivered nationwide in the Philippines.",
+      },
       { name: "author", content: "Lifestyles Philippines" },
       { property: "og:title", content: "Lifestyles Philippines" },
-      { property: "og:description", content: "Live Better. Every Day. Botanical wellness products delivered nationwide in the Philippines." },
+      {
+        property: "og:description",
+        content:
+          "Live Better. Every Day. Botanical wellness products delivered nationwide in the Philippines.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

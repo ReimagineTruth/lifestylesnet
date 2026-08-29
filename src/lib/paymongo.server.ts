@@ -3,7 +3,11 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { ensureDbReady } from "@/db/index";
 import * as schema from "@/db/schema";
-import { fetchPaymentIntentStatus, fetchQrPhImageUrl, markOrderPaidByIntent } from "@/lib/paymongo-core.server";
+import {
+  fetchPaymentIntentStatus,
+  fetchQrPhImageUrl,
+  markOrderPaidByIntent,
+} from "@/lib/paymongo-core.server";
 
 const confirmInput = z.object({
   orderId: z.string(),
@@ -11,7 +15,7 @@ const confirmInput = z.object({
 });
 
 export const fetchOrderQrFn = createServerFn({ method: "GET" })
-  .inputValidator((orderId: string) => orderId)
+  .validator((orderId: string) => orderId)
   .handler(async ({ data: orderId }) => {
     const db = await ensureDbReady();
     const [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, orderId));
@@ -24,7 +28,7 @@ export const fetchOrderQrFn = createServerFn({ method: "GET" })
   });
 
 export const confirmPaymongoPaymentFn = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => confirmInput.parse(data))
+  .validator((data: unknown) => confirmInput.parse(data))
   .handler(async ({ data }) => {
     const db = await ensureDbReady();
     const [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, data.orderId));

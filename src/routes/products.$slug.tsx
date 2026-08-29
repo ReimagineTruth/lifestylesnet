@@ -74,8 +74,7 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
   const [selectedId, setSelectedId] = useState(defaultVariant.id);
   const [qty, setQty] = useState(1);
 
-  const selected =
-    product.variants.find((variant) => variant.id === selectedId) ?? defaultVariant;
+  const selected = product.variants.find((variant) => variant.id === selectedId) ?? defaultVariant;
   const displayImage = variantImage(product, selected);
   const related = products.filter((p) => p.slug !== product.slug);
 

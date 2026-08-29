@@ -6,7 +6,7 @@ export const fetchProducts = createServerFn({ method: "GET" }).handler(async () 
 });
 
 export const fetchProduct = createServerFn({ method: "GET" })
-  .inputValidator((slug: string) => slug)
+  .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     return (await dbGetProduct(slug)) ?? null;
   });

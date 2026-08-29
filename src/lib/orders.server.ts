@@ -69,16 +69,14 @@ function mapOrder(
     ...(row.paymongoIntentId ? { paymongoIntentId: row.paymongoIntentId } : {}),
     ...(row.paypalOrderId ? { paypalOrderId: row.paypalOrderId } : {}),
     ...(row.bankCode ? { bankCode: row.bankCode as BankCode } : {}),
-    lines: lines.map(
-      (l): OrderLine => ({
-        slug: l.productSlug,
-        variantId: l.variantId,
-        code: l.skuCode,
-        name: l.name,
-        qty: l.qty,
-        price: l.unitPrice,
-      }),
-    ),
+    lines: lines.map((l): OrderLine => ({
+      slug: l.productSlug,
+      variantId: l.variantId,
+      code: l.skuCode,
+      name: l.name,
+      qty: l.qty,
+      price: l.unitPrice,
+    })),
     subtotal: row.subtotal,
     shipping: row.shipping,
     total: row.total,
@@ -86,7 +84,7 @@ function mapOrder(
 }
 
 export const createOrderFn = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => createOrderInput.parse(data))
+  .validator((data: unknown) => createOrderInput.parse(data))
   .handler(async ({ data }) => {
     const db = await ensureDbReady();
     const resolvedLines: OrderLine[] = [];
@@ -180,7 +178,7 @@ export const createOrderFn = createServerFn({ method: "POST" })
   });
 
 export const getOrderFn = createServerFn({ method: "GET" })
-  .inputValidator((id: string) => id)
+  .validator((id: string) => id)
   .handler(async ({ data: id }) => {
     const db = await ensureDbReady();
     const [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, id));
@@ -193,7 +191,7 @@ export const getOrderFn = createServerFn({ method: "GET" })
   });
 
 export const listOrdersByEmailFn = createServerFn({ method: "GET" })
-  .inputValidator((email: string) => email.trim().toLowerCase())
+  .validator((email: string) => email.trim().toLowerCase())
   .handler(async ({ data: email }) => {
     const db = await ensureDbReady();
     const rows = await db
@@ -203,24 +201,34 @@ export const listOrdersByEmailFn = createServerFn({ method: "GET" })
       .orderBy(desc(schema.orders.createdAt));
     const allLines = await db.select().from(schema.orderLines);
     return rows
-      .map((row) => mapOrder(row, allLines.filter((l) => l.orderId === row.id)))
+      .map((row) =>
+        mapOrder(
+          row,
+          allLines.filter((l) => l.orderId === row.id),
+        ),
+      )
       .reverse();
   });
 
 export const listAllOrdersFn = createServerFn({ method: "GET" })
-  .inputValidator((token: string) => token)
+  .validator((token: string) => token)
   .handler(async ({ data: token }) => {
     await requireAdmin(token);
     const db = await ensureDbReady();
     const rows = await db.select().from(schema.orders).orderBy(desc(schema.orders.createdAt));
     const allLines = await db.select().from(schema.orderLines);
     return rows
-      .map((row) => mapOrder(row, allLines.filter((l) => l.orderId === row.id)))
+      .map((row) =>
+        mapOrder(
+          row,
+          allLines.filter((l) => l.orderId === row.id),
+        ),
+      )
       .reverse();
   });
 
 export const updateOrderStatusFn = createServerFn({ method: "POST" })
-  .inputValidator((data: { token: string; id: string; status: OrderStatus }) => data)
+  .validator((data: { token: string; id: string; status: OrderStatus }) => data)
   .handler(async ({ data }) => {
     await requireAdmin(data.token);
     const db = await ensureDbReady();
@@ -244,7 +252,7 @@ const updateOrderAdminInput = z.object({
 });
 
 export const updateOrderAdminFn = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => updateOrderAdminInput.parse(data))
+  .validator((data: unknown) => updateOrderAdminInput.parse(data))
   .handler(async ({ data }) => {
     await requireAdmin(data.token);
     const db = await ensureDbReady();
@@ -263,7 +271,7 @@ export const updateOrderAdminFn = createServerFn({ method: "POST" })
   });
 
 export const getAdminDashboardFn = createServerFn({ method: "GET" })
-  .inputValidator((token: string) => token)
+  .validator((token: string) => token)
   .handler(async ({ data: token }) => {
     await requireAdmin(token);
     const db = await ensureDbReady();
@@ -302,7 +310,7 @@ export const getAdminDashboardFn = createServerFn({ method: "GET" })
   });
 
 export const adminLoginFn = createServerFn({ method: "POST" })
-  .inputValidator((password: string) => password)
+  .validator((password: string) => password)
   .handler(async ({ data: password }) => {
     const expected = process.env["ADMIN_PASSWORD"] ?? "lifestyles-admin";
     if (password !== expected) throw new Error("Invalid password");
@@ -319,5 +327,5 @@ export const adminLoginFn = createServerFn({ method: "POST" })
   });
 
 export const verifyAdminFn = createServerFn({ method: "GET" })
-  .inputValidator((token: string) => token)
+  .validator((token: string) => token)
   .handler(async ({ data: token }) => isAdmin(token));

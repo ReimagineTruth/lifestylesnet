@@ -70,7 +70,8 @@ function PrivacyPage() {
           </li>
           <li>
             <strong>Cookies and local storage:</strong> cart contents, saved email for faster
-            checkout, session preferences, and similar technical data needed for the site to function
+            checkout, session preferences, and similar technical data needed for the site to
+            function
           </li>
         </ul>
         <h3>Payment information</h3>
@@ -163,8 +164,8 @@ function PrivacyPage() {
         <p>
           We use reasonable technical and organizational measures to protect personal information,
           including encrypted connections (HTTPS), access controls on admin functions, and secure
-          handling of payment credentials by our payment partners. No method of transmission over the
-          internet is 100% secure; we cannot guarantee absolute security.
+          handling of payment credentials by our payment partners. No method of transmission over
+          the internet is 100% secure; we cannot guarantee absolute security.
         </p>
       </LegalSection>
 
@@ -193,7 +194,9 @@ function PrivacyPage() {
           <li>Remember items in your shopping cart</li>
           <li>Remember your email on checkout for convenience</li>
           <li>Maintain admin sessions for authorized users</li>
-          <li>Store QR payment session data during checkout (session storage, cleared after payment)</li>
+          <li>
+            Store QR payment session data during checkout (session storage, cleared after payment)
+          </li>
         </ul>
         <p>
           You can control cookies through your browser settings. Disabling essential storage may
@@ -219,17 +222,17 @@ function PrivacyPage() {
 
       <LegalSection id="links" title="12. Third-party links">
         <p>
-          Our site may link to external pages (social media, product PDFs, payment redirects). We are
-          not responsible for the privacy practices of those sites. Review their policies before
+          Our site may link to external pages (social media, product PDFs, payment redirects). We
+          are not responsible for the privacy practices of those sites. Review their policies before
           providing personal information.
         </p>
       </LegalSection>
 
       <LegalSection id="changes" title="13. Changes to this policy">
         <p>
-          We may update this Privacy Policy from time to time. The &quot;Last updated&quot; date will
-          reflect the latest version. Material changes may be communicated on the site or by email
-          where appropriate.
+          We may update this Privacy Policy from time to time. The &quot;Last updated&quot; date
+          will reflect the latest version. Material changes may be communicated on the site or by
+          email where appropriate.
         </p>
       </LegalSection>
 

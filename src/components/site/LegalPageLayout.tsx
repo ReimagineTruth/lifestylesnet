@@ -17,7 +17,9 @@ export function LegalPageLayout({ eyebrow, title, updated, children }: Props) {
       <h1 className="mt-2 text-4xl font-semibold">{title}</h1>
       <p className="mt-3 text-sm text-muted-foreground">Last updated: {updated}</p>
 
-      <div className="legal-content mt-10 max-w-3xl space-y-8 text-muted-foreground">{children}</div>
+      <div className="legal-content mt-10 max-w-3xl space-y-8 text-muted-foreground">
+        {children}
+      </div>
 
       <p className="mt-12 max-w-3xl text-sm text-muted-foreground">
         Questions?{" "}
@@ -34,7 +36,15 @@ export function LegalPageLayout({ eyebrow, title, updated, children }: Props) {
   );
 }
 
-export function LegalSection({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+export function LegalSection({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <section id={id} className="scroll-mt-24 space-y-3">
       <h2 className="text-xl font-semibold text-foreground">{title}</h2>
