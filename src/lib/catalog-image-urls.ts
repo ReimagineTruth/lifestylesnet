@@ -8,25 +8,25 @@ export const PBC_PHOTO = "https://pbc.lifestyles.net/includes/shop/PH/photo";
 const BUNDLE_IMG = "/bundles";
 
 export const productImageUrls: Record<string, string> = {
-  intra: `${LIFESTYLES_IMG}/bottle_INTRA.png`,
-  "nutria-plus": `${LIFESTYLES_IMG}/bottle_NP.png`,
-  cardiolife: `${LIFESTYLES_IMG}/bottle_CL.png`,
-  fibrelife: `${LIFESTYLES_IMG}/bottle_FL.png`,
+  intra: `${BUNDLE_IMG}/intra-1201ph.png`,
+  "nutria-plus": `${BUNDLE_IMG}/nutria-1502ph.png`,
+  cardiolife: `${BUNDLE_IMG}/cardio-1540ph.png`,
+  fibrelife: `${BUNDLE_IMG}/fibre-1038ph.png`,
   "better-together-pack": `${BUNDLE_IMG}/btp-6999.png`,
 };
 
-/** Maps catalog imageKey → display URL. Singles use lifestyles.net; bundles use local 480px PNGs. */
+/** Maps catalog imageKey → display URL. Singles and bundles use local 480px PNGs in /public/bundles. */
 export const bundleImageUrls: Record<string, string> = {
-  "intra-1201ph": `${LIFESTYLES_IMG}/bottle_INTRA.png`,
+  "intra-1201ph": `${BUNDLE_IMG}/intra-1201ph.png`,
   "intra-1201": `${BUNDLE_IMG}/intra-1201.png`,
   "intra-1231": `${BUNDLE_IMG}/intra-1231.png`,
   "intra-1232": `${BUNDLE_IMG}/intra-1232.png`,
   "intra-1234": `${BUNDLE_IMG}/intra-1234.png`,
-  "nutria-1502ph": `${LIFESTYLES_IMG}/bottle_NP.png`,
+  "nutria-1502ph": `${BUNDLE_IMG}/nutria-1502ph.png`,
   "nutria-1502": `${BUNDLE_IMG}/nutria-1502.png`,
-  "cardio-1540ph": `${LIFESTYLES_IMG}/bottle_CL.png`,
+  "cardio-1540ph": `${BUNDLE_IMG}/cardio-1540ph.png`,
   "cardio-1540": `${BUNDLE_IMG}/cardio-1540.png`,
-  "fibre-1038ph": `${LIFESTYLES_IMG}/bottle_FL.png`,
+  "fibre-1038ph": `${BUNDLE_IMG}/fibre-1038ph.png`,
   "fibre-1038": `${BUNDLE_IMG}/fibre-1038.png`,
   "btp-6999": `${BUNDLE_IMG}/btp-6999.png`,
   "btp-6999c": `${BUNDLE_IMG}/btp-6999c.png`,

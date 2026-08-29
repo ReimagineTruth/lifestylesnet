@@ -302,7 +302,7 @@ export async function createPaymongoPayment(
   const qrImageUrl = extractQrImageUrl(attrs);
   const redirectUrl = attrs.next_action?.redirect?.url;
 
-  if (method !== "qr_ph" && !qrImageUrl && !redirectUrl) {
+  if (!qrImageUrl && !redirectUrl) {
     throw new Error("PayMongo did not return a payment URL. Try again or pick another method.");
   }
 

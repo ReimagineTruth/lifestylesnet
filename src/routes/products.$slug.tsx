@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Check, ShoppingBag } from "lucide-react";
+import { Check, ExternalLink, ShoppingBag, Youtube } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart";
@@ -74,7 +74,7 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
   const related = products.filter((p) => p.slug !== product.slug);
 
   return (
-    <div className="container-page py-10">
+    <div className="container-page py-6 sm:py-8">
       <nav className="text-sm text-muted-foreground">
         <Link to="/products" className="hover:text-foreground">
           Products
@@ -83,19 +83,23 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
         <span className="text-foreground">{product.name}</span>
       </nav>
 
-      <div className="mt-8 grid gap-12 lg:grid-cols-2">
-        <div className="flex min-h-80 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted/30 p-6 sm:p-8">
-          <img
-            src={displayImage}
-            alt={`${product.name} — ${selected.label}`}
-            width={480}
-            height={480}
-            className="h-auto w-full max-h-120 object-contain"
-          />
+      <div className="mt-4 grid items-start gap-6 lg:mt-6 lg:grid-cols-2 lg:gap-10">
+        <div className="mx-auto w-full max-w-xs sm:max-w-sm lg:sticky lg:top-20 lg:max-w-none">
+          <div className="overflow-hidden rounded-2xl border border-border bg-muted/30">
+            <img
+              src={displayImage}
+              alt={`${product.name} — ${selected.label}`}
+              width={480}
+              height={480}
+              decoding="async"
+              fetchPriority="high"
+              className="aspect-square w-full object-contain p-4 sm:p-6"
+            />
+          </div>
         </div>
 
         <div>
-          <h1 className="text-4xl font-semibold">{product.name}</h1>
+          <h1 className="text-3xl font-semibold sm:text-4xl">{product.name}</h1>
           <p className="mt-2 text-lg text-muted-foreground">{product.tagline}</p>
           <p className="mt-6 text-3xl font-semibold">{peso(selected.price)}</p>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -207,6 +211,46 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
               <dd className="mt-1 text-muted-foreground">{product.directions}</dd>
             </div>
           </dl>
+
+          {product.faqs && product.faqs.length > 0 && (
+            <section className="mt-10 border-t border-border pt-8">
+              <h2 className="text-lg font-semibold">Frequently asked questions</h2>
+              <dl className="mt-6 space-y-6">
+                {product.faqs.map((faq) => (
+                  <div key={faq.q}>
+                    <dt className="text-sm font-semibold">{faq.q}</dt>
+                    <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">{faq.a}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+
+          {product.resources && product.resources.length > 0 && (
+            <section className="mt-8 space-y-3">
+              <h2 className="text-sm font-semibold">Resources</h2>
+              <ul className="space-y-2">
+                {product.resources.map((resource) => (
+                  <li key={resource.href}>
+                    <a
+                      href={resource.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
+                    >
+                      {resource.kind === "video" ? (
+                        <Youtube className="h-4 w-4" />
+                      ) : (
+                        <ExternalLink className="h-4 w-4" />
+                      )}
+                      {resource.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <p className="mt-8 text-xs text-muted-foreground">No approved therapeutic claims.</p>
         </div>
       </div>

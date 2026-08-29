@@ -9,6 +9,14 @@ export type ProductVariant = {
   imageKey?: string;
 };
 
+export type ProductFaq = { q: string; a: string };
+
+export type ProductResource = {
+  label: string;
+  href: string;
+  kind?: "pdf" | "video" | "link";
+};
+
 export type Product = {
   slug: string;
   cateId: number;
@@ -21,6 +29,8 @@ export type Product = {
   benefits: string[];
   ingredients: string;
   directions: string;
+  resources?: ProductResource[];
+  faqs?: ProductFaq[];
 };
 
 export const catalogProducts: Product[] = [
@@ -78,23 +88,67 @@ export const catalogProducts: Product[] = [
       },
     ],
     short:
-      "A proprietary formulation of 23 time-tested botanical extracts that work together to balance and strengthen the body's eight biological systems.",
+      "A unique proprietary blend of 23 botanical extracts designed to support, balance and strengthen the body's eight biological systems.",
     description: [
-      "For more than 3,000 years, civilizations in every corner of the world have documented the powerful effects that herbs, plants, roots, tree bark, leaves and flowers — the botanicals — have on human well-being. Intra combines this ancient knowledge with advanced science to create a nutritional supplement geared to today's lifestyles.",
-      "Intra is a pleasant-tasting, proprietary formulation of 23 time-tested and trusted botanical extracts that provide the body with antioxidants, flavonoids, lignins, polysaccharides and other health-enhancing nutrients specific to each herbal extract.",
-      "The key to Intra's effectiveness is the synergy of the blended botanicals working together — providing greater benefits than an individual botanical on its own. Intra's unique formula is exclusive to Lifestyles and has remained unchanged since 1992.",
-      "Intra is certified Safe for Athletic Use by the International Olympic Committee because it does not contain steroids or stimulants. Its formula has been enjoyed by millions of satisfied customers worldwide.",
+      "Intra is a unique and proprietary blend of 23 botanical extracts designed to support, balance and strengthen the 8 biological systems of the body. It has been specially formulated to include powerful yet very safe levels of each botanical extract and has been enjoyed around the world for over 15 years.",
+      "Intra is a natural food supplement that helps maintain vitality and optimal health. It works with the natural systems of the body — because each person is different, we experience different results. In general, Intra helps support and strengthen the areas of the body where we are weakest.",
+      "There are over 85,000 research studies published in peer-reviewed journals supporting the benefits of each of the botanicals found in Intra. Intra was developed for daily, long-term use using purified botanical extracts in a balanced and safe formulation.",
     ],
     benefits: [
-      "Balances the body's eight biological systems: Immune, Nervous, Hormonal (Endocrine), Digestive & Energy, Reproductive, Structural (Musculoskeletal), Eliminative / Antioxidant, and Cardiovascular",
-      "Provides antioxidants, flavonoids, lignins and polysaccharides from 23 botanical extracts",
-      "Certified Safe for Athletic Use by the International Olympic Committee — no steroids or stimulants",
-      "Formula unchanged since 1992, enjoyed by millions worldwide",
+      "Supports, balances and strengthens the body's eight biological systems",
+      "23 time-tested botanical extracts in a synergistic, proprietary blend",
+      "Natural food supplement for vitality and optimal health",
+      "Suitable for the whole family — enjoyed worldwide for over 15 years",
+      "Formulated with safe, moderate levels of each botanical for daily long-term use",
+      "Independent lab testing confirms no pesticide residues — meets USP and European Pharmacopeia limits",
     ],
     ingredients:
-      "Proprietary blend of 23 botanical extracts including Astragalus, Cascara Sagrada, Chamomile, Chicory, Dandelion, Echinacea, Ginger, Licorice, Passion Flower, Rose Hips, Sarsaparilla, Schisandra and Siberian Ginseng.",
+      "Proprietary blend of 23 botanical extracts. Extensive and stringent independent laboratory testing confirms the safety and purity of all components — including ABC Testing verification that Intra meets USP pesticide residue limits with no organochloride, organonitrogen or organophosphate pesticides detected.",
     directions:
-      "Drink 30 ml (one ounce) of Intra a day — it can make a world of difference. Drink Intra. Share Intra. Every Day.",
+      "Take 28 ml to 56 ml (1–2 fluid ounces) daily. Up to 168 ml (6 fluid ounces) may be consumed safely if your body needs additional support. If you are on medication or new to Intra, start with 5–10 ml (1–2 tsp) and work up gradually.",
+    resources: [
+      {
+        label: "Frequently asked questions (PDF)",
+        href: "https://pbc.lifestyles.net/includes/shop/cate_pdf/Intra_ph.pdf",
+        kind: "pdf",
+      },
+      {
+        label: "Pesticide-free lab report (PDF)",
+        href: "https://www.lifestyles.net/includes/files/Intra_Pesticide_free.pdf",
+        kind: "pdf",
+      },
+      {
+        label: "Product training videos (YouTube)",
+        href: "https://www.youtube.com/playlist?list=PLiH5E2dwOpDoutaDuZa10DwYnlMBZ7C7i",
+        kind: "video",
+      },
+    ],
+    faqs: [
+      {
+        q: "What is Intra?",
+        a: "Intra is a unique and proprietary blend of 23 botanical extracts designed to support, balance and strengthen the 8 biological systems of the body. It has been specially formulated to include powerful yet very safe levels of each botanical extract and has been enjoyed around the world for over 15 years. Intra is a natural food supplement that helps maintain vitality and optimal health.",
+      },
+      {
+        q: "What type of benefits can I expect?",
+        a: "Intra works with the natural systems of the body and, because each one of us is different, we experience different results. In general, Intra helps support and strengthen the areas of the body where we are weakest — often the results are very dramatic. There are over 85,000 research studies published in peer-reviewed journals supporting the benefits of each of the botanicals found in Intra.",
+      },
+      {
+        q: "How much Intra should I take every day?",
+        a: "The recommended dose is 28 ml to 56 ml (1–2 fluid ounces) a day, but up to 168 ml (6 fluid ounces) can be safely consumed daily if you feel like your body needs additional support. Intra is suitable for the whole family.",
+      },
+      {
+        q: "Is it OK to take Intra every day for a long period of time?",
+        a: "Yes. Intra was developed for this exact purpose using purified botanical extracts in a balanced and safe formulation. Many herbal experts recommend that high dosages of single botanicals be taken for only short periods of time — that does not apply with Intra, since it uses a moderate level of each botanical extract.",
+      },
+      {
+        q: "Is Intra approved by the FDA?",
+        a: "As a dietary supplement, Intra is considered a food and does not require FDA approval. The FDA does not offer opinions on or approval of dietary supplements. Extensive and stringent independent laboratory testing confirms the safety and purity of all components of Intra.",
+      },
+      {
+        q: "Are there any side effects with Intra?",
+        a: "In general, Intra has no side effects. Occasionally, a small minority of people go through a mild adjustment or cleansing period lasting no more than 3–5 days — start with 5–10 ml and work up slowly to avoid this. If you are allergic to any ingredient, as with any food product, do not continue to take Intra.",
+      },
+    ],
   },
   {
     slug: "nutria-plus",
@@ -123,20 +177,60 @@ export const catalogProducts: Product[] = [
       },
     ],
     short:
-      "A complete daily multivitamin with plant extracts, vitamins and minerals for everyday nutritional support.",
+      "A highly concentrated antioxidant supplement with twelve synergistic natural ingredients, including SelenoExcell® organically bound selenium.",
     description: [
-      "Nutria Plus combines essential vitamins and minerals with mixed plant extracts in a single daily capsule.",
-      "It is designed to fill the nutritional gaps of a busy Filipino lifestyle where fresh, varied meals are not always possible.",
+      "NutriaPlus is a highly concentrated antioxidant supplement containing a unique combination of twelve synergistic natural ingredients. Each serving provides antioxidants and phytonutrients from plant extracts, vitamins and minerals, including organically bound selenium called SelenoExcell® — the brand of selenium studied in the Nutritional Prevention of Cancer Study by the University of Arizona.",
+      "Antioxidants help protect every cell and membrane in the body from the damaging effects of daily life and help prevent health conditions that result from accumulated oxidative damage. Using the zebrafish research model, Lifestyles set out to find the most powerful combination of natural ingredients to help prevent abnormal cell growth, enhance tissue repair, reduce inflammation, and protect cells from pollution and sun exposure.",
+      "NutriaPlus is not intended to replace fresh fruits and vegetables but helps supplement important nutrients many people miss. Taking NutriaPlus together with Intra is encouraged — the combination increases ORAC value, effectiveness and overall health benefits through synergistic interactions.",
     ],
     benefits: [
-      "Complete daily vitamin and mineral support",
-      "Antioxidant plant extracts",
-      "Supports immune function",
-      "Convenient once-a-day capsule",
+      "Twelve synergistic natural ingredients with antioxidants, vitamins and minerals",
+      "Includes SelenoExcell® — clinically studied organically bound selenium",
+      "Helps protect cells and slow effects of aging when antioxidant intake is low",
+      "Developed using zebrafish research — genetic structure closely mirrors humans",
+      "Complements Intra for increased antioxidant capacity and synergistic benefits",
     ],
     ingredients:
-      "Vitamins A, C, D, E, B-complex, Zinc, Selenium, Magnesium, Calcium and a proprietary blend of mixed botanical extracts.",
-    directions: "Take 1 capsule daily after a meal.",
+      "Twelve synergistic natural ingredients including plant extracts, vitamins, minerals and SelenoExcell® (organically bound selenium).",
+    directions:
+      "Take 1 capsule daily with a meal. Vitamins, minerals and phytonutrients are better absorbed when a small amount of fat is present.",
+    resources: [
+      {
+        label: "Official product information (PDF)",
+        href: "https://pbc.lifestyles.net/includes/shop/cate_pdf/NutriaPlus_ph.pdf",
+        kind: "pdf",
+      },
+    ],
+    faqs: [
+      {
+        q: "What is NutriaPlus?",
+        a: "NutriaPlus is a highly concentrated antioxidant supplement containing a unique combination of twelve synergistic natural ingredients. Each serving provides antioxidants and phytonutrients from plant extracts, vitamins and minerals, including SelenoExcell® organically bound selenium.",
+      },
+      {
+        q: "What are antioxidants?",
+        a: "Antioxidants help protect every cell and membrane in our body from the damaging effects of daily life and help prevent health conditions that result from accumulated damage from oxidation. Increasing antioxidant intake can result in a major improvement in health and increased longevity.",
+      },
+      {
+        q: "How was NutriaPlus developed?",
+        a: "Using the zebrafish research model, Lifestyles found the most powerful combination of natural ingredients to help humans prevent abnormal cell growth, enhance tissue repair, reduce inflammation, and protect cells from environmental pollution and sun exposure.",
+      },
+      {
+        q: "Why are zebrafish used for research?",
+        a: "Zebrafish share 70% of genes with humans and more than 80% of genes associated with human diseases. Results observed in zebrafish are reliably reflected in humans — a trusted method for determining what will benefit human health.",
+      },
+      {
+        q: "Why should I take NutriaPlus?",
+        a: "Consider NutriaPlus if you don't get 5–7 daily servings of fruits and vegetables, don't eat a balanced diet, skip meals, often eat fast food, have stress in your life, or live in a polluted environment.",
+      },
+      {
+        q: "Do I still need to eat fresh fruits and vegetables?",
+        a: "Absolutely. NutriaPlus supplements important nutrients but does not replace fresh produce, which also provides dietary fibre and water. Modern farming has also reduced the nutritional density of many fruits and vegetables.",
+      },
+      {
+        q: "Can I take Intra and NutriaPlus together?",
+        a: "Yes — this is encouraged. NutriaPlus was tested and developed to complement Intra. Together they provide increased ORAC value, greater effectiveness and more health benefits through synergistic interactions.",
+      },
+    ],
   },
   {
     slug: "cardiolife",
@@ -207,19 +301,60 @@ export const catalogProducts: Product[] = [
       },
     ],
     short:
-      "A soluble and insoluble fibre blend that supports regular digestion and comfortable gut health.",
+      "A revolutionary proprietary soluble fibre blend with konjac glucomannan to support healthy weight, blood sugar and cholesterol.",
     description: [
-      "FibreLife delivers a balanced mix of soluble and insoluble dietary fibre to support digestive regularity.",
-      "Most modern diets fall short of the recommended daily fibre intake — FibreLife makes closing that gap simple.",
+      "FibreLife is a revolutionary proprietary soluble fibre blend from Lifestyles designed to combat the worldwide trend toward low fibre intake and obesity. Formulated with konjac glucomannan, guar gum, xanthan gum and cinnamon extract, each batch is fully tested and standardized for quality, potency and viscosity.",
+      "Once ingested with plenty of water, FibreLife forms a gel-like complex with the greatest viscosity of any dietary fibre. This slows digestion, reduces absorption of sugar and calories, lowers the Glycemic Index of a meal, and creates a sense of fullness without impacting energy levels.",
+      "Health authorities recommend at least 30 g of total fibre daily, yet most people consume less than half that amount. FibreLife helps address this dietary gap and supports weight management, blood sugar regulation and healthy cholesterol levels.",
     ],
     benefits: [
-      "Supports digestive regularity",
-      "Helps maintain a healthy gut environment",
-      "Contributes to a feeling of fullness",
-      "Gentle for daily use",
+      "Helps maintain healthy body weight by promoting fullness and minimizing overeating",
+      "Lowers the Glycemic Index of meals and stabilizes energy levels",
+      "Supports healthy cholesterol and elimination of toxins via digestive health",
+      "Konjac glucomannan — clinically studied for blood sugar, appetite and cholesterol",
+      "Highest viscosity soluble fibre blend — small doses, greater beneficial effects",
     ],
-    ingredients: "Psyllium husk, oat bran, apple pectin, inulin and guar gum.",
-    directions: "Take 2 capsules daily with a full glass of water.",
+    ingredients:
+      "Proprietary soluble fibre blend: Konjac Glucomannan (from Amorphophallus konjac root), Guar Gum, Xanthan Gum and Cinnamon extract. 500 mg soluble fibre per capsule. No artificial preservatives, sweeteners, starches or wheat.",
+    directions:
+      "Take 1–2 capsules before each meal, up to 3 times daily, with 250–500 mL of water per capsule. Drink at least 3 L of water or fluids per day. Start with 1 capsule daily and increase gradually every few days. Recommended for ages 13 and up.",
+    resources: [
+      {
+        label: "Official product information (PDF)",
+        href: "https://pbc.lifestyles.net/includes/shop/cate_pdf/FibreLife_ph.pdf",
+        kind: "pdf",
+      },
+    ],
+    faqs: [
+      {
+        q: "What is FibreLife?",
+        a: "FibreLife is a proprietary, highly viscous soluble fibre blend from Lifestyles that supplements the body's dietary deficiency of fibre.",
+      },
+      {
+        q: "How does FibreLife work?",
+        a: "Once ingested with plenty of water, FibreLife forms a gel-like complex of natural fibres with the greatest viscosity of any dietary fibre. This slows digestion, reduces sugar and calorie absorption, and creates a sense of fullness without impacting energy levels.",
+      },
+      {
+        q: "What is the Glycemic Index and why does it matter?",
+        a: "The Glycemic Index (GI) measures how foods affect blood sugar. High-GI foods cause sharp spikes; low-GI foods are slowly digested for gradual, sustained energy. FibreLife helps lower the overall GI of a meal.",
+      },
+      {
+        q: "If I don't need to lose weight, do I still need FibreLife?",
+        a: "Yes. FibreLife addresses the dietary fibre gap — adults should consume at least 30 g daily, but most people get less than half through diet alone.",
+      },
+      {
+        q: "Why is drinking water so important?",
+        a: "FibreLife absorbs many times its weight in water. Without enough water it can cause constipation; with plenty of water it forms a smooth gel that eases constipation and promotes bowel regularity.",
+      },
+      {
+        q: "Can children take FibreLife?",
+        a: "Fibre is essential for children's health, but due to its high potency and gelling capacity, FibreLife is recommended only for ages 13 and older.",
+      },
+      {
+        q: "How does FibreLife interact with medications?",
+        a: "If you take medications or other supplements, take them at least one hour before FibreLife so both can work effectively.",
+      },
+    ],
   },
   {
     slug: "better-together-pack",

@@ -75,6 +75,13 @@ export function enrichProduct(product: Product): ProductWithImages {
     ...resolved,
     ...product,
     image: resolved.image,
+    short: resolved.short,
+    description: resolved.description,
+    benefits: resolved.benefits,
+    ingredients: resolved.ingredients,
+    directions: resolved.directions,
+    resources: resolved.resources,
+    faqs: resolved.faqs,
     variants: product.variants.map((variant) => {
       const catalogVariant = findCatalogVariant(resolved, variant);
       if (!catalogVariant) return resolveVariant(variant);
