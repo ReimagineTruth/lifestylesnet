@@ -2,7 +2,7 @@ import { Star } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   REVIEW_AVERAGE,
-  REVIEW_COUNT,
+  formatPublicReviewCount,
   type CustomerReview,
   customerReviewsTagalog,
   formatReviewTimeAgo,
@@ -81,7 +81,7 @@ export function LiveCustomerReviews({ productName, className = "" }: Props) {
   const [visible, setVisible] = useState<CustomerReview[]>(() => pool.slice(0, VISIBLE_COUNT));
   const [newId, setNewId] = useState<number | null>(null);
   const [liveOffsetMin, setLiveOffsetMin] = useState(0);
-  const [recentCount, setRecentCount] = useState(12);
+  const [recentCount, setRecentCount] = useState(1_247);
 
   useEffect(() => {
     if (pool.length === 0) return;
@@ -108,7 +108,7 @@ export function LiveCustomerReviews({ productName, className = "" }: Props) {
     return () => window.clearInterval(minuteTimer);
   }, []);
 
-  const displayCount = productName ? pool.length : REVIEW_COUNT;
+  const displayCount = formatPublicReviewCount();
   const average = REVIEW_AVERAGE;
 
   return (
@@ -135,7 +135,9 @@ export function LiveCustomerReviews({ productName, className = "" }: Props) {
           <p className="text-4xl font-semibold tabular-nums">{average.toFixed(1)}</p>
           <Stars />
           <p className="mt-2 text-sm text-muted-foreground">
-            {displayCount} review · {recentCount} bago ngayong araw
+            {displayCount} review
+            {productName ? ` · ${productName}` : ""} · {recentCount.toLocaleString("en-PH")} bago
+            ngayong araw
           </p>
         </div>
       </div>

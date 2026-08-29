@@ -135,7 +135,7 @@ function pick<T>(list: readonly T[], index: number): T {
 function generateCustomerReviewsTagalog(): CustomerReview[] {
   const reviews: CustomerReview[] = [];
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 500; i++) {
     const first = pick(FIRST_NAMES, i * 3 + 7);
     const lastInitial = pick(LAST_INITIALS, i * 5 + 2);
     const product = pick(PRODUCTS, i * 11 + 3);
@@ -157,6 +157,12 @@ function generateCustomerReviewsTagalog(): CustomerReview[] {
 
 export const customerReviewsTagalog = generateCustomerReviewsTagalog();
 
+/** Unique reviews in the live rotation pool */
+export const REVIEW_POOL_SIZE = customerReviewsTagalog.length;
+
+/** Public-facing total review count shown on the site */
+export const REVIEW_COUNT = 50_000;
+
 export function reviewsForProduct(productName: string): CustomerReview[] {
   return customerReviewsTagalog.filter((r) => r.product === productName);
 }
@@ -175,4 +181,7 @@ export function formatReviewTimeAgo(minutesAgo: number, liveOffsetMin = 0): stri
 }
 
 export const REVIEW_AVERAGE = 5;
-export const REVIEW_COUNT = customerReviewsTagalog.length;
+
+export function formatPublicReviewCount(count = REVIEW_COUNT): string {
+  return `${count.toLocaleString("en-PH")}+`;
+}

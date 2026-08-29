@@ -19,7 +19,7 @@ export const productImageUrls: Record<string, string> = {
 /** Maps catalog imageKey → display URL. Singles and bundles use local 480px PNGs in /public/bundles. */
 export const bundleImageUrls: Record<string, string> = {
   "intra-1201ph": `${BUNDLE_IMG}/intra-1201ph.png`,
-  "intra-1201": `${BUNDLE_IMG}/intra-1201.png`,
+  "intra-1201": `${BUNDLE_IMG}/intra-1201.jpg`,
   "intra-1231": `${BUNDLE_IMG}/intra-1231.png`,
   "intra-1232": `${BUNDLE_IMG}/intra-1232.png`,
   "intra-1234": `${BUNDLE_IMG}/intra-1234.png`,

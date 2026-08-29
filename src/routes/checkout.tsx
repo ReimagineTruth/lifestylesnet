@@ -15,9 +15,15 @@ import { BANK_OPTIONS, type BankCode } from "@/lib/paymongo";
 import { getVariant, peso, variantCartLabel } from "@/lib/products";
 import { clearOrderQrPhSession, saveOrderQrPhSession } from "@/lib/qrPhPaySession";
 import { QRPH_PROVIDERS, qrScanHint, type QrPhProvider } from "@/lib/qrphProviders";
+import { getPaymentMethodsForCheckoutFn } from "@/lib/settings.server";
+import { CHECKOUT_PAY_CHOICES, firstAvailablePaymentMethod } from "@/lib/payment-methods";
 import { tl } from "@/lib/tagalog";
 
 export const Route = createFileRoute("/checkout")({
+  loader: async () => {
+    const { methods } = await getPaymentMethodsForCheckoutFn();
+    return { paymentMethods: methods };
+  },
   head: () => ({
     meta: [
       { title: "Checkout | Lifestyles Philippines" },
@@ -73,6 +79,7 @@ const STEPS: { id: Step; label: string }[] = [
 ];
 
 function CheckoutPage() {
+  const { paymentMethods } = Route.useLoaderData();
   const { items, clear, ready } = useCart();
   const createOrder = useServerFn(createOrderFn);
   const confirmPayment = useServerFn(confirmPaymongoPaymentFn);
@@ -97,6 +104,14 @@ function CheckoutPage() {
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
   const [checkoutSummary, setCheckoutSummary] = useState<CheckoutSummary | null>(null);
   const [paid, setPaid] = useState(false);
+
+  const hasPaymentMethod = CHECKOUT_PAY_CHOICES.some((key) => paymentMethods[key]);
+
+  useEffect(() => {
+    if (paymentMethods[payChoice]) return;
+    const next = firstAvailablePaymentMethod(paymentMethods);
+    if (next) setPayChoice(next);
+  }, [paymentMethods, payChoice]);
 
   useEffect(() => {
     const savedEmail = loadCustomerEmail();
@@ -194,6 +209,10 @@ function CheckoutPage() {
     }
     if (payChoice === "bank" && !bankCode) {
       toast.error("Pumili ng bangko para sa online banking.");
+      return;
+    }
+    if (!paymentMethods[payChoice]) {
+      toast.error("This payment method is not available. Please choose another option.");
       return;
     }
 
@@ -348,107 +367,142 @@ function CheckoutPage() {
                 </button>
                 <h2 className="text-lg font-semibold">Payment method</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Pick the app you&apos;ll use to scan. All e-wallet tiles use one PayMongo QR Ph
-                  code.
+                  Pick how you want to pay. Unavailable options are hidden.
                 </p>
 
-                <label
-                  className={`mt-5 flex cursor-pointer items-start gap-3 rounded-lg border p-4 ${
-                    payChoice === "cod" ? "border-brand bg-brand-soft" : "border-border"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    checked={payChoice === "cod"}
-                    onChange={() => setPayChoice("cod")}
-                    className="mt-1 accent-brand"
-                  />
-                  <span>
-                    <span className="block text-sm font-semibold">Cash on delivery</span>
-                    <span className="text-sm text-muted-foreground">
-                      Pay when your order arrives.
-                    </span>
-                  </span>
-                </label>
-
-                <p className="mt-6 text-sm font-semibold">QR Ph & e-wallets</p>
-                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {QRPH_PROVIDERS.map((provider) => (
-                    <button
-                      key={provider.id}
-                      type="button"
-                      onClick={() => {
-                        setPayChoice("qr_ph");
-                        setQrProvider(provider);
-                      }}
-                      className={`rounded-lg border px-3 py-4 text-left text-sm transition-colors ${
-                        payChoice === "qr_ph" && qrProvider.id === provider.id
-                          ? "border-brand bg-brand-soft"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <span className="block font-semibold">{provider.label}</span>
-                      {provider.hint && (
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
-                          {provider.hint}
+                {!hasPaymentMethod ? (
+                  <p className="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                    No payment methods are available right now. Please contact support or try again
+                    later.
+                  </p>
+                ) : (
+                  <>
+                    {paymentMethods.cod && (
+                      <label
+                        className={`mt-5 flex cursor-pointer items-start gap-3 rounded-lg border p-4 ${
+                          payChoice === "cod" ? "border-brand bg-brand-soft" : "border-border"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          checked={payChoice === "cod"}
+                          onChange={() => setPayChoice("cod")}
+                          className="mt-1 accent-brand"
+                        />
+                        <span>
+                          <span className="block text-sm font-semibold">Cash on delivery</span>
+                          <span className="text-sm text-muted-foreground">
+                            Pay when your order arrives.
+                          </span>
                         </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
+                      </label>
+                    )}
 
-                <p className="mt-6 text-sm font-semibold">Other options</p>
-                <div className="mt-3 space-y-2">
-                  <label
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${
-                      payChoice === "bank" ? "border-brand bg-brand-soft" : "border-border"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      checked={payChoice === "bank"}
-                      onChange={() => setPayChoice("bank")}
-                      className="accent-brand"
-                    />
-                    <span className="text-sm font-semibold">Online banking (redirect)</span>
-                  </label>
-                  {payChoice === "bank" && (
-                    <select
-                      value={bankCode}
-                      onChange={(e) => setBankCode(e.target.value as BankCode)}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    >
-                      {BANK_OPTIONS.map((b) => (
-                        <option key={b.code} value={b.code}>
-                          {b.label}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  <label
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${
-                      payChoice === "paypal" ? "border-brand bg-brand-soft" : "border-border"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      checked={payChoice === "paypal"}
-                      onChange={() => setPayChoice("paypal")}
-                      className="accent-brand"
-                    />
-                    <span>
-                      <span className="block text-sm font-semibold">PayPal or card</span>
-                      <span className="text-sm text-muted-foreground">
-                        PayPal wallet, debit/credit card, and other PayPal checkout options.
-                      </span>
-                    </span>
-                  </label>
-                </div>
+                    {paymentMethods.qr_ph && (
+                      <>
+                        <p className="mt-6 text-sm font-semibold">QR Ph & e-wallets</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Pick the app you&apos;ll use to scan. All tiles share one PayMongo QR Ph
+                          code.
+                        </p>
+                        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                          {QRPH_PROVIDERS.map((provider) => (
+                            <button
+                              key={provider.id}
+                              type="button"
+                              onClick={() => {
+                                setPayChoice("qr_ph");
+                                setQrProvider(provider);
+                              }}
+                              className={`rounded-lg border px-3 py-4 text-left text-sm transition-colors ${
+                                payChoice === "qr_ph" && qrProvider.id === provider.id
+                                  ? "border-brand bg-brand-soft"
+                                  : "border-border hover:bg-muted/50"
+                              }`}
+                            >
+                              <span className="block font-semibold">{provider.label}</span>
+                              {provider.hint && (
+                                <span className="mt-0.5 block text-xs text-muted-foreground">
+                                  {provider.hint}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {(paymentMethods.bank || paymentMethods.paypal) && (
+                      <>
+                        <p className="mt-6 text-sm font-semibold">Other options</p>
+                        <div className="mt-3 space-y-2">
+                          {paymentMethods.bank && (
+                            <>
+                              <label
+                                className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${
+                                  payChoice === "bank"
+                                    ? "border-brand bg-brand-soft"
+                                    : "border-border"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  checked={payChoice === "bank"}
+                                  onChange={() => setPayChoice("bank")}
+                                  className="accent-brand"
+                                />
+                                <span className="text-sm font-semibold">
+                                  Online banking (redirect)
+                                </span>
+                              </label>
+                              {payChoice === "bank" && (
+                                <select
+                                  value={bankCode}
+                                  onChange={(e) => setBankCode(e.target.value as BankCode)}
+                                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                >
+                                  {BANK_OPTIONS.map((b) => (
+                                    <option key={b.code} value={b.code}>
+                                      {b.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                            </>
+                          )}
+                          {paymentMethods.paypal && (
+                            <label
+                              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${
+                                payChoice === "paypal"
+                                  ? "border-brand bg-brand-soft"
+                                  : "border-border"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                checked={payChoice === "paypal"}
+                                onChange={() => setPayChoice("paypal")}
+                                className="accent-brand"
+                              />
+                              <span>
+                                <span className="block text-sm font-semibold">PayPal or card</span>
+                                <span className="text-sm text-muted-foreground">
+                                  PayPal wallet, debit/credit card, and other PayPal checkout
+                                  options.
+                                </span>
+                              </span>
+                            </label>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
 
               <button
                 type="button"
-                disabled={submitting}
+                disabled={submitting || !hasPaymentMethod || !paymentMethods[payChoice]}
                 onClick={placeOrder}
                 className="w-full rounded-md bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground disabled:opacity-50"
               >

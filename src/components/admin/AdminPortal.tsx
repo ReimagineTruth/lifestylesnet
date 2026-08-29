@@ -18,7 +18,17 @@ import { tl } from "@/lib/tagalog";
 import { Switch } from "@/components/ui/switch";
 import { allVariants, isTestProductSlug, peso } from "@/lib/products";
 import { getAdminDashboardFn, listAllOrdersFn, updateOrderAdminFn } from "@/lib/orders.server";
-import { getTestProductVisibleFn, setTestProductVisibleFn } from "@/lib/settings.server";
+import {
+  getTestProductVisibleFn,
+  setTestProductVisibleFn,
+  getPaymentMethodsAdminFn,
+  setPaymentMethodsAdminFn,
+} from "@/lib/settings.server";
+import {
+  CHECKOUT_PAY_CHOICES,
+  PAYMENT_METHOD_META,
+  type CheckoutPayChoice,
+} from "@/lib/payment-methods";
 import { listFeedbackThreadsFn, sendFeedbackMessageFn } from "@/lib/feedback.server";
 
 const ADMIN_TOKEN_KEY = "lifestyles-ph-admin-token";
@@ -746,6 +756,109 @@ function FeedbackTab({
   );
 }
 
+function PaymentMethodsSettings({ token }: { token: string }) {
+  const fetchPaymentMethods = useServerFn(getPaymentMethodsAdminFn);
+  const savePaymentMethods = useServerFn(setPaymentMethodsAdminFn);
+  const [adminMethods, setAdminMethods] = useState<Record<CheckoutPayChoice, boolean>>({
+    cod: true,
+    qr_ph: true,
+    bank: true,
+    paypal: true,
+  });
+  const [configured, setConfigured] = useState<Record<CheckoutPayChoice, boolean>>({
+    cod: true,
+    qr_ph: false,
+    bank: false,
+    paypal: false,
+  });
+  const [effective, setEffective] = useState<Record<CheckoutPayChoice, boolean>>({
+    cod: true,
+    qr_ph: false,
+    bank: false,
+    paypal: false,
+  });
+  const [loading, setLoading] = useState(true);
+  const [savingKey, setSavingKey] = useState<CheckoutPayChoice | null>(null);
+
+  useEffect(() => {
+    void fetchPaymentMethods()
+      .then(({ admin, configured: cfg, effective: eff }) => {
+        setAdminMethods(admin);
+        setConfigured(cfg);
+        setEffective(eff);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [fetchPaymentMethods]);
+
+  function toggleMethod(key: CheckoutPayChoice, enabled: boolean) {
+    setSavingKey(key);
+    const next = { ...adminMethods, [key]: enabled };
+    void savePaymentMethods({ data: { token, methods: next } })
+      .then(({ admin, configured: cfg, effective: eff }) => {
+        setAdminMethods(admin);
+        setConfigured(cfg);
+        setEffective(eff);
+        toast.success(
+          enabled
+            ? `${PAYMENT_METHOD_META[key].label} is shown at checkout.`
+            : `${PAYMENT_METHOD_META[key].label} is hidden at checkout.`,
+        );
+      })
+      .catch((err: Error) => toast.error(err.message || "Could not update payment method."))
+      .finally(() => setSavingKey(null));
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="mb-4">
+        <p className="text-sm font-semibold">Checkout payment methods</p>
+        <p className="text-xs text-muted-foreground">
+          Enable or hide payment options on checkout. Methods without provider credentials stay
+          hidden even when enabled.
+        </p>
+      </div>
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Loading payment settings…</p>
+      ) : (
+        <div className="space-y-3">
+          {CHECKOUT_PAY_CHOICES.map((key) => {
+            const meta = PAYMENT_METHOD_META[key];
+            const isConfigured = configured[key];
+            const isLive = effective[key];
+            return (
+              <div
+                key={key}
+                className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border px-4 py-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{meta.label}</p>
+                  <p className="text-xs text-muted-foreground">{meta.description}</p>
+                  {!isConfigured && meta.configureHint && (
+                    <p className="mt-1 text-xs text-amber-700">{meta.configureHint}</p>
+                  )}
+                  {isConfigured && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Checkout: {isLive ? "visible" : "hidden"}
+                      {!adminMethods[key] ? " (disabled in admin)" : ""}
+                    </p>
+                  )}
+                </div>
+                <Switch
+                  checked={adminMethods[key]}
+                  disabled={!isConfigured || savingKey === key}
+                  onCheckedChange={(checked) => toggleMethod(key, checked)}
+                  aria-label={`${adminMethods[key] ? "Hide" : "Show"} ${meta.label}`}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CatalogueTab({ orders, token }: { orders: Order[]; token: string }) {
   const catalogue = allVariants();
   const fetchTestVisible = useServerFn(getTestProductVisibleFn);
@@ -765,6 +878,8 @@ function CatalogueTab({ orders, token }: { orders: Order[]; token: string }) {
         <h1 className="text-3xl font-semibold">Catalogue</h1>
         <p className="mt-1 text-muted-foreground">All product bundles and sales from SQL.</p>
       </div>
+
+      <PaymentMethodsSettings token={token} />
 
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
         <div>

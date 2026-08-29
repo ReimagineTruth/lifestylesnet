@@ -108,6 +108,14 @@ export const createOrderFn = createServerFn({ method: "POST" })
     const orderId = newOrderId();
     const now = new Date().toISOString();
 
+    const { readEffectivePaymentMethodsForOrder } = await import("@/lib/settings.server");
+    const { paymentMethodToCheckoutChoice } = await import("@/lib/payment-methods");
+    const enabledMethods = await readEffectivePaymentMethodsForOrder();
+    const checkoutChoice = paymentMethodToCheckoutChoice(data.paymentMethod);
+    if (!checkoutChoice || !enabledMethods[checkoutChoice]) {
+      throw new Error("This payment method is not available. Please choose another option.");
+    }
+
     let paymongoIntentId: string | null = null;
     let paymentResult: Awaited<ReturnType<typeof createPaymongoPayment>> | null = null;
 
