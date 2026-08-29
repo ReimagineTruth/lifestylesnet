@@ -12,7 +12,7 @@ export const productImageUrls: Record<string, string> = {
   "nutria-plus": `${BUNDLE_IMG}/nutria-1502ph.png`,
   cardiolife: `${BUNDLE_IMG}/cardio-1540ph.png`,
   fibrelife: `${BUNDLE_IMG}/fibre-1038ph.png`,
-  "better-together-pack": `${BUNDLE_IMG}/btp-6999.png`,
+  "better-together-pack": `${BUNDLE_IMG}/btp-6999.jpg`,
   "test-checkout": `${BUNDLE_IMG}/intra-1201ph.png`,
 };
 
@@ -30,8 +30,8 @@ export const bundleImageUrls: Record<string, string> = {
   "fibre-1038ph": `${BUNDLE_IMG}/fibre-1038ph.png`,
   "fibre-1038": `${BUNDLE_IMG}/fibre-1038.png`,
   "test-checkout-10ph": `${BUNDLE_IMG}/intra-1201ph.png`,
-  "btp-6999": `${BUNDLE_IMG}/btp-6999.png`,
-  "btp-6999c": `${BUNDLE_IMG}/btp-6999c.png`,
+  "btp-6999": `${BUNDLE_IMG}/btp-6999.jpg`,
+  "btp-6999c": `${BUNDLE_IMG}/btp-6999c.jpg`,
 };
 
 export function pbcPhotoUrl(code: string) {

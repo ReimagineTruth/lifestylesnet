@@ -200,6 +200,16 @@ export const catalogProducts: Product[] = [
         href: "https://pbc.lifestyles.net/includes/shop/cate_pdf/NutriaPlus_ph.pdf",
         kind: "pdf",
       },
+      {
+        label: "FDA Advisory No. 2025-0473 — Nutria Plus (PDF)",
+        href: "https://www.fda.gov.ph/wp-content/uploads/2025/04/FDA-Advisory-No.2025-0473.pdf",
+        kind: "pdf",
+      },
+      {
+        label: "FDA registration & how to verify",
+        href: "/fda",
+        kind: "link",
+      },
     ],
     faqs: [
       {
@@ -361,7 +371,7 @@ export const catalogProducts: Product[] = [
     cateId: 6,
     name: "Better Together Pack",
     tagline: "Complete wellness bundle — save when you buy together",
-    image: "https://pbc.lifestyles.net/includes/shop/PH/photo/6999.jpg",
+    image: "/bundles/btp-6999.jpg",
     variants: [
       {
         id: "btp-6999",

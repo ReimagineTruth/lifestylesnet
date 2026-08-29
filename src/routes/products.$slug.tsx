@@ -224,19 +224,29 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
               <ul className="space-y-2">
                 {product.resources.map((resource) => (
                   <li key={resource.href}>
-                    <a
-                      href={resource.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
-                    >
-                      {resource.kind === "video" ? (
-                        <Youtube className="h-4 w-4" />
-                      ) : (
-                        <ExternalLink className="h-4 w-4" />
-                      )}
-                      {resource.label}
-                    </a>
+                    {resource.href.startsWith("/") ? (
+                      <Link
+                        to={resource.href as "/fda"}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
+                      >
+                        <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                        {resource.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={resource.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
+                      >
+                        {resource.kind === "video" ? (
+                          <Youtube className="h-4 w-4" />
+                        ) : (
+                          <ExternalLink className="h-4 w-4" />
+                        )}
+                        {resource.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

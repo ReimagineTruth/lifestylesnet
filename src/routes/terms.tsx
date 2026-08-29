@@ -31,8 +31,7 @@ function TermsPage() {
           The Service is operated by Lifestyles Philippines (&quot;we&quot;, &quot;us&quot;, or
           &quot;our&quot;), an independent distributor of Lifestyles Global Network wellness
           products in the Philippines. Our registered office is in Makati City, Metro Manila. You
-          may reach us at <a href="mailto:support@lifestyles.ph">support@lifestyles.ph</a> or (02)
-          8888 0000.
+          may reach us at <a href="mailto:support@lifestyles.ph">support@lifestyles.ph</a>.
         </p>
       </LegalSection>
 

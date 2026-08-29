@@ -36,8 +36,6 @@ function PrivacyPage() {
           Makati City, Metro Manila, Philippines
           <br />
           Email: <a href="mailto:support@lifestyles.ph">support@lifestyles.ph</a>
-          <br />
-          Phone: (02) 8888 0000
         </p>
         <p>
           For privacy-related requests, contact us at the email above with the subject line

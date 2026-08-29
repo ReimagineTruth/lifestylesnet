@@ -8,13 +8,13 @@ export const Route = createFileRoute("/contact")({
       {
         name: "description",
         content:
-          "Get in touch with Lifestyles Philippines. Find our office location, phone number and email.",
+          "Get in touch with Lifestyles Philippines. Find our office location and email.",
       },
       { property: "og:title", content: "Contact Lifestyles Philippines" },
       {
         property: "og:description",
         content:
-          "Get in touch with Lifestyles Philippines. Find our office location, phone number and email.",
+          "Get in touch with Lifestyles Philippines. Find our office location and email.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -40,8 +40,6 @@ function ContactPage() {
               Makati City, Metro Manila
               <br />
               support@lifestyles.ph
-              <br />
-              (02) 8888 0000
             </p>
           </div>
           <div>

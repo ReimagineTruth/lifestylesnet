@@ -68,6 +68,7 @@ export function Footer() {
             { to: "/about", label: "About Lifestyles" },
             { to: "/opportunity", label: "Licensee opportunity" },
             { to: "/contact", label: "Contact us" },
+            { to: "/fda", label: "FDA registration" },
             { to: "/terms", label: "Terms of Service" },
             { to: "/privacy", label: "Privacy Policy" },
           ]}
@@ -80,8 +81,6 @@ export function Footer() {
             Makati City, Metro Manila
             <br />
             support@lifestyles.ph
-            <br />
-            (02) 8888 0000
           </p>
         </div>
       </div>
@@ -96,6 +95,10 @@ export function Footer() {
             <span aria-hidden="true">·</span>
             <Link to="/privacy" className="hover:text-foreground">
               Privacy
+            </Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/fda" className="hover:text-foreground">
+              FDA
             </Link>
             <span aria-hidden="true">·</span>
             <span>No approved therapeutic claims. Products vary by market.</span>
