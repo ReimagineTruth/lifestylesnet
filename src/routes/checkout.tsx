@@ -23,6 +23,7 @@ import {
   type CustomerProfile,
 } from "@/lib/customer-auth";
 import { verifyCustomerFn } from "@/lib/customer-auth.server";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/checkout")({
   loader: async () => {

@@ -10,9 +10,11 @@ import {
 import { cn } from "@/lib/utils";
 
 export function AmbientSoundWidget() {
+  const [mounted, setMounted] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const stopSound = useCallback(() => {
     const audio = audioRef.current;
@@ -21,16 +23,24 @@ export function AmbientSoundWidget() {
     audio.currentTime = 0;
   }, []);
 
-  const startSound = useCallback(async () => {
+  const startSound = useCallback(async (): Promise<boolean> => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || unavailable) return false;
 
     audio.volume = 0.28;
     audio.loop = true;
-    await audio.play();
-    setEnabled(true);
-    writeAmbientPreference(true);
-  }, []);
+
+    try {
+      await audio.play();
+      setEnabled(true);
+      writeAmbientPreference(true);
+      return true;
+    } catch {
+      setEnabled(false);
+      writeAmbientPreference(false);
+      return false;
+    }
+  }, [unavailable]);
 
   const disableSound = useCallback(() => {
     stopSound();
@@ -49,25 +59,13 @@ export function AmbientSoundWidget() {
   }, [disableSound, enabled, startSound]);
 
   useEffect(() => {
+    setMounted(true);
     setShowHint(!readAmbientHintSeen());
 
-    const audio = new Audio(AMBIENT_MP3);
-    audio.preload = "auto";
-    audioRef.current = audio;
+    if (!readAmbientPreference()) return;
 
-    const wantsSound = readAmbientPreference();
-    if (!wantsSound) {
-      return () => {
-        stopSound();
-        audioRef.current = null;
-      };
-    }
-
-    setEnabled(true);
     const resumeOnGesture = () => {
       void startSound();
-      window.removeEventListener("pointerdown", resumeOnGesture);
-      window.removeEventListener("keydown", resumeOnGesture);
     };
     window.addEventListener("pointerdown", resumeOnGesture, { once: true });
     window.addEventListener("keydown", resumeOnGesture, { once: true });
@@ -75,16 +73,31 @@ export function AmbientSoundWidget() {
     return () => {
       window.removeEventListener("pointerdown", resumeOnGesture);
       window.removeEventListener("keydown", resumeOnGesture);
-      stopSound();
-      audioRef.current = null;
     };
-  }, [startSound, stopSound]);
+  }, [startSound]);
+
+  useEffect(() => {
+    return () => {
+      stopSound();
+    };
+  }, [stopSound]);
+
+  if (!mounted || unavailable) return null;
 
   return (
     <div className="fixed bottom-6 left-6 z-40 flex flex-col items-start gap-2">
+      <audio
+        ref={audioRef}
+        src={AMBIENT_MP3}
+        preload="none"
+        onError={() => setUnavailable(true)}
+        className="hidden"
+        aria-hidden
+      />
+
       {showHint && !enabled && (
         <div
-          className="ambient-hint max-w-[11rem] rounded-xl border border-border bg-card px-3 py-2 text-xs leading-snug text-foreground shadow-lg"
+          className="ambient-hint max-w-44 rounded-xl border border-border bg-card px-3 py-2 text-xs leading-snug text-foreground shadow-lg"
           role="status"
         >
           Tap for soft relaxing background sound

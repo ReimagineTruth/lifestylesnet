@@ -2,7 +2,10 @@ export const AMBIENT_SOUND_KEY = "lifestyles-ambient-sound";
 export const AMBIENT_HINT_KEY = "lifestyles-ambient-hint-seen";
 
 /** "Relax" by AtlasAudio — Pixabay Content License (511892). */
-export const AMBIENT_MP3 = "/audio/ambient-relax.mp3";
+export const AMBIENT_MP3 = `${import.meta.env.BASE_URL}audio/ambient-relax.mp3`.replace(
+  /(?<!:)\/{2,}/g,
+  "/",
+);
 
 export function readAmbientPreference(): boolean {
   if (typeof window === "undefined") return false;
