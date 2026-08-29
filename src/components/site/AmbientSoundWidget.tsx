@@ -15,6 +15,7 @@ export function AmbientSoundWidget() {
   const [showHint, setShowHint] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const autoStartAttemptedRef = useRef(false);
 
   const stopSound = useCallback(() => {
     const audio = audioRef.current;
@@ -34,10 +35,11 @@ export function AmbientSoundWidget() {
       await audio.play();
       setEnabled(true);
       writeAmbientPreference(true);
+      setShowHint(false);
+      markAmbientHintSeen();
       return true;
     } catch {
       setEnabled(false);
-      writeAmbientPreference(false);
       return false;
     }
   }, [unavailable]);
@@ -46,11 +48,11 @@ export function AmbientSoundWidget() {
     stopSound();
     setEnabled(false);
     writeAmbientPreference(false);
+    markAmbientHintSeen();
+    setShowHint(false);
   }, [stopSound]);
 
   const toggle = useCallback(async () => {
-    markAmbientHintSeen();
-    setShowHint(false);
     if (enabled) {
       disableSound();
       return;
@@ -60,19 +62,45 @@ export function AmbientSoundWidget() {
 
   useEffect(() => {
     setMounted(true);
-    setShowHint(!readAmbientHintSeen());
-
     if (!readAmbientPreference()) return;
 
-    const resumeOnGesture = () => {
-      void startSound();
+    let gestureCleanup: (() => void) | undefined;
+
+    const tryAutoStart = () => {
+      if (autoStartAttemptedRef.current) return;
+      autoStartAttemptedRef.current = true;
+      void startSound().then((started) => {
+        if (started) return;
+
+        setShowHint(!readAmbientHintSeen());
+        const resumeOnGesture = () => {
+          void startSound();
+        };
+        window.addEventListener("pointerdown", resumeOnGesture, { once: true });
+        window.addEventListener("keydown", resumeOnGesture, { once: true });
+        gestureCleanup = () => {
+          window.removeEventListener("pointerdown", resumeOnGesture);
+          window.removeEventListener("keydown", resumeOnGesture);
+        };
+      });
     };
-    window.addEventListener("pointerdown", resumeOnGesture, { once: true });
-    window.addEventListener("keydown", resumeOnGesture, { once: true });
+
+    const audio = audioRef.current;
+    if (!audio) {
+      return () => gestureCleanup?.();
+    }
+
+    const onReady = () => tryAutoStart();
+    if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+      tryAutoStart();
+    } else {
+      audio.addEventListener("canplaythrough", onReady, { once: true });
+      audio.load();
+    }
 
     return () => {
-      window.removeEventListener("pointerdown", resumeOnGesture);
-      window.removeEventListener("keydown", resumeOnGesture);
+      audio.removeEventListener("canplaythrough", onReady);
+      gestureCleanup?.();
     };
   }, [startSound]);
 
@@ -89,7 +117,7 @@ export function AmbientSoundWidget() {
       <audio
         ref={audioRef}
         src={AMBIENT_MP3}
-        preload="none"
+        preload="auto"
         onError={() => setUnavailable(true)}
         className="hidden"
         aria-hidden
@@ -100,7 +128,7 @@ export function AmbientSoundWidget() {
           className="ambient-hint max-w-44 rounded-xl border border-border bg-card px-3 py-2 text-xs leading-snug text-foreground shadow-lg"
           role="status"
         >
-          Tap for soft relaxing background sound
+          Relaxing sound starts on your first tap — turn off anytime below
         </div>
       )}
 

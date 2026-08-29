@@ -7,9 +7,10 @@ export const AMBIENT_MP3 = `${import.meta.env.BASE_URL}audio/ambient-relax.mp3`.
   "/",
 );
 
+/** True unless the visitor explicitly turned sound off. New visitors default to on. */
 export function readAmbientPreference(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(AMBIENT_SOUND_KEY) === "on";
+  if (typeof window === "undefined") return true;
+  return window.localStorage.getItem(AMBIENT_SOUND_KEY) !== "off";
 }
 
 export function writeAmbientPreference(on: boolean) {
