@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Leaf, Truck, ShieldCheck } from "lucide-react";
-import { products, peso } from "@/lib/products";
+import { products, peso, productFromPrice } from "@/lib/products";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -60,7 +60,7 @@ function Index() {
           </div>
 
           <div className="relative">
-            <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-muted/40">
+            <div className="aspect-4/3 overflow-hidden rounded-2xl bg-muted/40">
               <img
                 src={products[0]!.image}
                 alt="Intra botanical wellness drink"
@@ -117,7 +117,9 @@ function Index() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">{p.name}</h3>
                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.tagline}</p>
-                <p className="mt-3 font-semibold text-foreground">{peso(p.price)}</p>
+                <p className="mt-3 font-semibold text-foreground">
+                  From {peso(productFromPrice(p))}
+                </p>
               </Link>
             ))}
           </div>

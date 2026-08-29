@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Menu, ShoppingBag, X } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
-import logoAsset from "@/assets/LS_logo.png.asset.json";
+import logo from "@/assets/LS_logo.png";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -20,7 +20,7 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-3" aria-label="Lifestyles Philippines home">
-          <img src={logoAsset.url} alt="Lifestyles — Live Better. Every Day." className="h-9 w-auto" />
+          <img src={logo} alt="Lifestyles — Live Better. Every Day." className="h-9 w-auto" />
           <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
             Philippines
           </span>

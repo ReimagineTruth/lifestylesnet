@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ContactFeedbackForm } from "@/components/site/ContactFeedbackForm";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -53,11 +54,14 @@ function ContactPage() {
           </div>
         </div>
         <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold">Send a message</h2>
+          <h2 className="text-lg font-semibold">Magpadala ng mensahe</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            This page is a placeholder. Connect Lovable Cloud to enable a working contact form and
-            email notifications.
+            Magtanong tungkol sa produkto, order, o delivery. Realtime ang sagot — tingnan ang
+            widget sa kanang ibaba ng page.
           </p>
+          <div className="mt-6">
+            <ContactFeedbackForm />
+          </div>
         </div>
       </div>
     </div>

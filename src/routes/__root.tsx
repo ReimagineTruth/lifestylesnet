@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Header } from "../components/site/Header";
 import { Footer } from "../components/site/Footer";
+import { FeedbackWidget } from "../components/site/FeedbackWidget";
+import { Toaster } from "../components/ui/sonner";
 import { CartProvider } from "../lib/cart";
 
 function NotFoundComponent() {
@@ -129,6 +131,8 @@ function RootComponent() {
             <Outlet />
           </main>
           <Footer />
+          <FeedbackWidget />
+          <Toaster richColors position="top-center" />
         </div>
       </CartProvider>
     </QueryClientProvider>

@@ -1,10 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { CheckCircle2, Loader2, QrCode } from "lucide-react";
 import { useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
-import { loadOrders, type Order } from "@/lib/orders";
+import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { getOrderFn } from "@/lib/orders.server";
+import { confirmPaymongoPaymentFn } from "@/lib/paymongo.server";
+import type { PaymentMethod } from "@/lib/orders";
 import { peso } from "@/lib/products";
 
+const searchSchema = z.object({
+  payment: z.enum(["pending", "return"]).optional(),
+  status: z.enum(["success", "cancel"]).optional(),
+});
+
 export const Route = createFileRoute("/order/$id")({
+  validateSearch: searchSchema,
+  loader: ({ params }) => getOrderFn({ data: params.id }),
   head: () => ({
     meta: [
       { title: "Order Confirmation | Lifestyles Philippines" },
@@ -17,26 +29,65 @@ export const Route = createFileRoute("/order/$id")({
   component: OrderPage,
 });
 
-const methodLabel = { cod: "Cash on delivery", bank: "Bank transfer", gcash: "GCash" } as const;
+const methodLabel: Record<PaymentMethod, string> = {
+  cod: "Cash on delivery",
+  qr_ph: "QR Ph (PayMongo)",
+  gcash: "GCash (PayMongo)",
+  maya: "Maya (PayMongo)",
+  grab_pay: "GrabPay (PayMongo)",
+  shopee_pay: "ShopeePay (PayMongo)",
+  billease: "BillEase (PayMongo)",
+  bank: "Online banking (PayMongo)",
+  card: "Card (PayMongo)",
+};
 
 function OrderPage() {
+  const order = Route.useLoaderData();
   const { id } = Route.useParams();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [ready, setReady] = useState(false);
+  const search = Route.useSearch();
+  const confirmPayment = useServerFn(confirmPaymongoPaymentFn);
+  const [qrImage, setQrImage] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [paid, setPaid] = useState(order?.status === "paid");
 
   useEffect(() => {
-    setOrder(loadOrders().find((o) => o.id === id) ?? null);
-    setReady(true);
-  }, [id]);
+    if (!order) return;
+    const stored = sessionStorage.getItem(`paymongo-qr-${order.id}`);
+    if (stored) setQrImage(stored);
+    setPaid(order.status === "paid");
+  }, [order]);
 
-  if (!ready) return <div className="container-page py-24 text-muted-foreground">Loading…</div>;
+  useEffect(() => {
+    if (!order || order.paymentMethod === "cod" || paid) return;
+
+    const poll = () => {
+      void confirmPayment({ data: { orderId: order.id, intentId: order.paymongoIntentId } })
+        .then((result) => {
+          if (result.paid) {
+            setPaid(true);
+            sessionStorage.removeItem(`paymongo-qr-${order.id}`);
+            toast.success("Payment confirmed! Salamat po.");
+          }
+        })
+        .catch(() => {});
+    };
+
+    poll();
+    const interval = setInterval(poll, 4000);
+    return () => clearInterval(interval);
+  }, [order, confirmPayment, paid]);
+
+  useEffect(() => {
+    if (search.status === "success") toast.success("Payment received — confirming…");
+    if (search.status === "cancel") toast.error("Payment was cancelled.");
+  }, [search.status]);
 
   if (!order) {
     return (
       <div className="container-page py-24 text-center">
         <h1 className="text-3xl font-semibold">Order not found</h1>
         <p className="mt-3 text-muted-foreground">
-          We couldn't find order {id} on this device. Contact support with your order number.
+          We couldn't find that order. Check the order number or contact support.
         </p>
         <Link
           to="/products"
@@ -47,6 +98,9 @@ function OrderPage() {
       </div>
     );
   }
+
+  const awaitingPayment =
+    order.paymentMethod !== "cod" && !paid && order.status !== "cancelled";
 
   return (
     <div className="container-page max-w-3xl py-16">
@@ -60,11 +114,67 @@ function OrderPage() {
         {order.customer.email}.
       </p>
 
+      {awaitingPayment && (
+        <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-6">
+          <div className="flex items-center gap-2 font-semibold text-amber-900">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Awaiting payment via PayMongo
+          </div>
+          <p className="mt-2 text-sm text-amber-800">
+            {qrImage
+              ? "I-scan ang QR code sa ibaba gamit ang GCash, Maya, o anumang QR Ph app."
+              : search.payment === "return"
+                ? "Bumalik ka mula sa bangko o e-wallet. Kino-confirm namin ang bayad…"
+                : "Kumpletohin ang bayad sa PayMongo. Awtomatikong mag-u-update ang status."}
+          </p>
+          {qrImage && (
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <img
+                src={qrImage.startsWith("data:") ? qrImage : `data:image/png;base64,${qrImage}`}
+                alt="QR Ph payment code"
+                className="h-56 w-56 rounded-lg border border-border bg-white p-2"
+              />
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <QrCode className="h-4 w-4" />
+                Expires in ~30 minutes · Total {peso(order.total)}
+              </p>
+            </div>
+          )}
+          <button
+            type="button"
+            disabled={checking}
+            onClick={() => {
+              setChecking(true);
+              void confirmPayment({ data: { orderId: id, intentId: order.paymongoIntentId } })
+                .then((result) => {
+                  if (result.paid) {
+                    setPaid(true);
+                    sessionStorage.removeItem(`paymongo-qr-${order.id}`);
+                    toast.success("Payment confirmed!");
+                  } else {
+                    toast.message("Hindi pa natatanggap ang bayad. Subukan muli.");
+                  }
+                })
+                .finally(() => setChecking(false));
+            }}
+            className="mt-4 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground disabled:opacity-50"
+          >
+            {checking ? "Checking…" : "Check payment status"}
+          </button>
+        </div>
+      )}
+
+      {paid && order.paymentMethod !== "cod" && (
+        <div className="mt-8 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-800">
+          Payment confirmed via PayMongo.
+        </div>
+      )}
+
       <div className="mt-10 rounded-xl border border-border bg-card p-6">
         <div className="flex flex-wrap justify-between gap-4 text-sm">
           <div>
             <p className="font-semibold">Status</p>
-            <p className="mt-1 capitalize text-muted-foreground">{order.status}</p>
+            <p className="mt-1 capitalize text-muted-foreground">{paid ? "paid" : order.status}</p>
           </div>
           <div>
             <p className="font-semibold">Payment</p>
@@ -84,7 +194,7 @@ function OrderPage() {
 
         <ul className="mt-8 divide-y divide-border border-t border-border">
           {order.lines.map((l) => (
-            <li key={l.slug} className="flex justify-between py-3 text-sm">
+            <li key={`${l.variantId ?? l.slug}-${l.name}`} className="flex justify-between py-3 text-sm">
               <span className="text-muted-foreground">
                 {l.name} × {l.qty}
               </span>

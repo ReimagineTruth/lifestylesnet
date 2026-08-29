@@ -1,13 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Youtube } from "lucide-react";
-import logoAsset from "@/assets/LS_logo.png.asset.json";
+import logo from "@/assets/LS_logo.png";
 
 export function Footer() {
   return (
     <footer className="mt-24 border-t border-border bg-muted/40">
       <div className="container-page grid gap-10 py-14 md:grid-cols-4">
         <div>
-          <img src={logoAsset.url} alt="Lifestyles — Live Better. Every Day." className="h-10 w-auto" />
+          <img src={logo} alt="Lifestyles — Live Better. Every Day." className="h-10 w-auto" />
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">
             Live Better. Every Day. Botanical wellness products distributed in the Philippines since
             1989.
@@ -38,6 +38,7 @@ export function Footer() {
             { to: "/products/nutria-plus", label: "Nutria Plus" },
             { to: "/products/cardiolife", label: "CardioLife" },
             { to: "/products/fibrelife", label: "FibreLife" },
+            { to: "/products/better-together-pack", label: "Better Together Pack" },
           ]}
         />
         <FooterCol

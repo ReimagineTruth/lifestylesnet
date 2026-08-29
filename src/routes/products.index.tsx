@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { peso, products } from "@/lib/products";
+import { peso, productFromPrice, products } from "@/lib/products";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
@@ -28,8 +28,8 @@ function ProductsPage() {
       </p>
       <h1 className="mt-2 text-4xl font-semibold">All products</h1>
       <p className="mt-3 max-w-2xl text-muted-foreground">
-        Four core formulations, made to work together. Free shipping on orders over ₱3,000 anywhere
-        in the Philippines.
+        Five product lines with single bottles, multi-packs and Better Together bundles. Free
+        shipping on orders over ₱3,000 anywhere in the Philippines.
       </p>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -52,7 +52,12 @@ function ProductsPage() {
             </div>
             <h2 className="mt-4 text-lg font-semibold">{p.name}</h2>
             <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.tagline}</p>
-            <p className="mt-3 font-semibold text-foreground">{peso(p.price)}</p>
+            <p className="mt-3 font-semibold text-foreground">
+              From {peso(productFromPrice(p))}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {p.variants.length} bundle{p.variants.length > 1 ? "s" : ""} available
+            </p>
           </Link>
         ))}
       </div>

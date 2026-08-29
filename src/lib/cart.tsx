@@ -7,14 +7,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { migrateLegacyCartId } from "@/lib/products";
 
-export type CartItem = { slug: string; qty: number };
+export type CartItem = { variantId: string; qty: number };
 
 type CartContextValue = {
   items: CartItem[];
-  add: (slug: string, qty?: number) => void;
-  setQty: (slug: string, qty: number) => void;
-  remove: (slug: string) => void;
+  add: (variantId: string, qty?: number) => void;
+  setQty: (variantId: string, qty: number) => void;
+  remove: (variantId: string) => void;
   clear: () => void;
   count: number;
 };
@@ -22,13 +23,32 @@ type CartContextValue = {
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "lifestyles-ph-cart";
 
+function normalizeItems(raw: unknown): CartItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (item && typeof item === "object" && "qty" in item) {
+        const id =
+          "variantId" in item && typeof item.variantId === "string"
+            ? item.variantId
+            : "slug" in item && typeof item.slug === "string"
+              ? migrateLegacyCartId(item.slug)
+              : null;
+        const qty = typeof item.qty === "number" ? item.qty : 0;
+        if (id && qty > 0) return { variantId: id, qty };
+      }
+      return null;
+    })
+    .filter((item): item is CartItem => item !== null);
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw) as CartItem[]);
+      if (raw) setItems(normalizeItems(JSON.parse(raw)));
     } catch {
       /* ignore */
     }
@@ -42,24 +62,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items]);
 
-  const add = useCallback((slug: string, qty = 1) => {
+  const add = useCallback((variantId: string, qty = 1) => {
     setItems((prev) => {
-      const found = prev.find((i) => i.slug === slug);
-      if (found) return prev.map((i) => (i.slug === slug ? { ...i, qty: i.qty + qty } : i));
-      return [...prev, { slug, qty }];
+      const found = prev.find((i) => i.variantId === variantId);
+      if (found) {
+        return prev.map((i) =>
+          i.variantId === variantId ? { ...i, qty: i.qty + qty } : i,
+        );
+      }
+      return [...prev, { variantId, qty }];
     });
   }, []);
 
-  const setQty = useCallback((slug: string, qty: number) => {
+  const setQty = useCallback((variantId: string, qty: number) => {
     setItems((prev) =>
       qty <= 0
-        ? prev.filter((i) => i.slug !== slug)
-        : prev.map((i) => (i.slug === slug ? { ...i, qty } : i)),
+        ? prev.filter((i) => i.variantId !== variantId)
+        : prev.map((i) => (i.variantId === variantId ? { ...i, qty } : i)),
     );
   }, []);
 
-  const remove = useCallback((slug: string) => {
-    setItems((prev) => prev.filter((i) => i.slug !== slug));
+  const remove = useCallback((variantId: string) => {
+    setItems((prev) => prev.filter((i) => i.variantId !== variantId));
   }, []);
 
   const clear = useCallback(() => setItems([]), []);

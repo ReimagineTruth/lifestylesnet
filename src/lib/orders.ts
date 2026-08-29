@@ -1,6 +1,24 @@
 export type OrderStatus = "pending" | "paid" | "shipped" | "delivered" | "cancelled";
 
-export type OrderLine = { slug: string; name: string; qty: number; price: number };
+export type OrderLine = {
+  slug: string;
+  variantId?: string;
+  code?: string;
+  name: string;
+  qty: number;
+  price: number;
+};
+
+export type PaymentMethod =
+  | "cod"
+  | "qr_ph"
+  | "gcash"
+  | "maya"
+  | "grab_pay"
+  | "shopee_pay"
+  | "billease"
+  | "bank"
+  | "card";
 
 export type Order = {
   id: string;
@@ -15,8 +33,10 @@ export type Order = {
     postal: string;
     notes?: string;
   };
-  paymentMethod: "cod" | "bank" | "gcash";
+  paymentMethod: PaymentMethod;
   reference?: string;
+  paymongoIntentId?: string;
+  bankCode?: string;
   lines: OrderLine[];
   subtotal: number;
   shipping: number;
@@ -24,32 +44,28 @@ export type Order = {
   status: OrderStatus;
 };
 
-const KEY = "lifestyles-ph-orders";
-
-export function loadOrders(): Order[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Order[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveOrders(orders: Order[]) {
-  window.localStorage.setItem(KEY, JSON.stringify(orders));
-}
-
-export function addOrder(order: Order) {
-  const all = loadOrders();
-  saveOrders([order, ...all]);
-}
-
-export function updateOrderStatus(id: string, status: OrderStatus) {
-  const all = loadOrders().map((o) => (o.id === id ? { ...o, status } : o));
-  saveOrders(all);
-  return all;
-}
+export type AdminDashboardStats = {
+  totalOrders: number;
+  pending: number;
+  paid: number;
+  shipped: number;
+  delivered: number;
+  cancelled: number;
+  revenue: number;
+  ordersToday: number;
+  feedbackThreads: number;
+  byPayment: {
+    cod: number;
+    qr_ph: number;
+    gcash: number;
+    maya: number;
+    grab_pay: number;
+    shopee_pay: number;
+    billease: number;
+    bank: number;
+    card: number;
+  };
+};
 
 export function newOrderId() {
   const n = Math.floor(Math.random() * 90000) + 10000;
@@ -58,3 +74,15 @@ export function newOrderId() {
 
 export const SHIPPING_FLAT = 150;
 export const FREE_SHIPPING_THRESHOLD = 3000;
+
+export const CUSTOMER_EMAIL_KEY = "lifestyles-ph-customer-email";
+
+export function saveCustomerEmail(email: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CUSTOMER_EMAIL_KEY, email.trim().toLowerCase());
+}
+
+export function loadCustomerEmail() {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(CUSTOMER_EMAIL_KEY) ?? "";
+}

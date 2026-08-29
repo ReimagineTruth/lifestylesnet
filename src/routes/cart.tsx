@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Trash2 } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { getProduct, peso } from "@/lib/products";
+import { getVariant, peso, variantCartLabel } from "@/lib/products";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT } from "@/lib/orders";
 
 export const Route = createFileRoute("/cart")({
@@ -21,10 +21,13 @@ function CartPage() {
   const { items, setQty, remove } = useCart();
 
   const lines = items
-    .map((i) => ({ item: i, product: getProduct(i.slug) }))
-    .filter((l) => l.product);
+    .map((i) => ({ item: i, line: getVariant(i.variantId) }))
+    .filter((l) => l.line);
 
-  const subtotal = lines.reduce((sum, l) => sum + l.product!.price * l.item.qty, 0);
+  const subtotal = lines.reduce(
+    (sum, l) => sum + l.line!.variant.price * l.item.qty,
+    0,
+  );
   const shipping = subtotal === 0 || subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
 
   return (
@@ -44,11 +47,11 @@ function CartPage() {
       ) : (
         <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_360px]">
           <ul className="divide-y divide-border rounded-xl border border-border bg-card">
-            {lines.map(({ item, product }) => (
-              <li key={item.slug} className="flex gap-4 p-5">
+            {lines.map(({ item, line }) => (
+              <li key={item.variantId} className="flex gap-4 p-5">
                 <img
-                  src={product!.image}
-                  alt={product!.name}
+                  src={line!.product.image}
+                  alt={line!.product.name}
                   loading="lazy"
                   width={1024}
                   height={1024}
@@ -57,17 +60,21 @@ function CartPage() {
                 <div className="flex-1">
                   <div className="flex justify-between gap-4">
                     <div>
-                      <h2 className="font-semibold">{product!.name}</h2>
-                      <p className="text-sm text-muted-foreground">{product!.size}</p>
+                      <h2 className="font-semibold">
+                        {variantCartLabel(line!.product, line!.variant)}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        {line!.variant.size} · Code {line!.variant.code}
+                      </p>
                     </div>
-                    <p className="font-semibold">{peso(product!.price * item.qty)}</p>
+                    <p className="font-semibold">{peso(line!.variant.price * item.qty)}</p>
                   </div>
                   <div className="mt-4 flex items-center gap-4">
                     <div className="flex items-center rounded-md border border-border">
                       <button
                         type="button"
                         aria-label="Decrease quantity"
-                        onClick={() => setQty(item.slug, item.qty - 1)}
+                        onClick={() => setQty(item.variantId, item.qty - 1)}
                         className="px-3 py-1.5"
                       >
                         −
@@ -76,7 +83,7 @@ function CartPage() {
                       <button
                         type="button"
                         aria-label="Increase quantity"
-                        onClick={() => setQty(item.slug, item.qty + 1)}
+                        onClick={() => setQty(item.variantId, item.qty + 1)}
                         className="px-3 py-1.5"
                       >
                         +
@@ -84,7 +91,7 @@ function CartPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => remove(item.slug)}
+                      onClick={() => remove(item.variantId)}
                       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" /> Remove
