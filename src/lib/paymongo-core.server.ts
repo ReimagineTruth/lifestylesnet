@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { ensureDbReady } from "@/db/index";
-import * as schema from "@/db/schema";
 import type { BankCode, PaymongoCheckoutMethod, PaymongoPaymentResult } from "@/lib/paymongo";
+import { withDb } from "@/lib/server-db.server";
+export { siteUrl } from "@/lib/site-url";
 
 const PAYMONGO_API = "https://api.paymongo.com/v1";
 
@@ -35,12 +35,6 @@ function secretKey() {
 
 function publicKey() {
   return process.env["PAYMONGO_PUBLIC_KEY"] ?? process.env["VITE_PAYMONGO_PUBLIC_KEY"] ?? "";
-}
-
-export function siteUrl() {
-  return (
-    process.env["PUBLIC_SITE_URL"] ?? process.env["VITE_PUBLIC_SITE_URL"] ?? "http://localhost:8080"
-  );
 }
 
 function authHeader(key: string) {
@@ -324,8 +318,8 @@ export async function markOrderPaidByIntent(opts: {
   orderId?: string;
   paymentId?: string;
 }) {
-  const db = await ensureDbReady();
-  let row: typeof schema.orders.$inferSelect | undefined;
+  const { db, schema } = await withDb();
+  let row: Awaited<ReturnType<typeof withDb>>["schema"]["orders"]["$inferSelect"] | undefined;
 
   if (opts.orderId) {
     [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, opts.orderId));
@@ -337,6 +331,9 @@ export async function markOrderPaidByIntent(opts: {
   }
 
   if (!row || row.status === "paid" || row.status === "cancelled") return null;
+
+  const { applyPendingWalletDebitForOrder } = await import("@/lib/wallet.server");
+  await applyPendingWalletDebitForOrder(row.id);
 
   await db
     .update(schema.orders)
@@ -418,11 +415,22 @@ export async function handlePaymongoWebhook(request: Request): Promise<Response>
       const paymentId = eventData?.id?.startsWith("pay_") ? eventData.id : undefined;
       const linkId = eventData?.id?.startsWith("link_") ? eventData.id : undefined;
       const resolvedIntentId = intentId ?? linkId;
-      await markOrderPaidByIntent({
-        ...(resolvedIntentId ? { intentId: resolvedIntentId } : {}),
-        ...(orderId ? { orderId } : {}),
-        ...(paymentId ? { paymentId } : {}),
-      });
+      const purpose = metadata["purpose"];
+
+      if (purpose === "wallet_topup" && metadata["topup_id"]) {
+        const { completeWalletTopup } = await import("@/lib/wallet.server");
+        await completeWalletTopup({
+          topupId: metadata["topup_id"],
+          ...(resolvedIntentId ? { intentId: resolvedIntentId } : {}),
+          ...(paymentId ? { paymentId } : {}),
+        });
+      } else {
+        await markOrderPaidByIntent({
+          ...(resolvedIntentId ? { intentId: resolvedIntentId } : {}),
+          ...(orderId ? { orderId } : {}),
+          ...(paymentId ? { paymentId } : {}),
+        });
+      }
     } else if (eventType && failedEvents.has(eventType)) {
       // Keep order pending — customer can retry
     }

@@ -73,7 +73,7 @@ export function Footer() {
             { to: "/fda", label: "FDA registration" },
             { to: "/terms", label: "Terms of Service" },
             { to: "/privacy", label: "Privacy Policy" },
-            { href: LIFESTYLES_GLOBAL_PRIVACY_PDF, label: "Global privacy (PDF)" },
+            { href: LIFESTYLES_GLOBAL_PRIVACY_PDF, label: "Global privacy" },
           ]}
         />
         <div>
@@ -117,7 +117,7 @@ export function Footer() {
               FDA
             </Link>
             <span aria-hidden="true">·</span>
-            <span>No approved therapeutic claims. Products vary by market.</span>
+            <span>We&apos;re happy to help — reach out anytime with your questions.</span>
           </p>
         </div>
       </div>

@@ -5,8 +5,6 @@ import { toast } from "sonner";
 import { useCart } from "@/lib/cart";
 import {
   getDefaultVariant,
-  peso,
-  pesoExact,
   products,
   variantCartLabel,
   variantImage,
@@ -16,7 +14,10 @@ import { loadProductForPageFn } from "@/lib/products.server";
 import { getTestProductVisibleFn } from "@/lib/settings.server";
 import { isTestProductSlug } from "@/lib/products";
 import { LiveCustomerReviews } from "@/components/site/LiveCustomerReviews";
+import { ProductUrgencyBanner } from "@/components/site/ProductUrgencyBanner";
+import { SalePrice } from "@/components/site/SalePrice";
 import { tl } from "@/lib/tagalog";
+import { saleMetaForVariant } from "@/lib/sale-urgency";
 
 const FAQ_TAGALOG_SECTION: Partial<Record<string, string>> = {
   intra: "intra",
@@ -73,6 +74,7 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
   const selected = product.variants.find((variant) => variant.id === selectedId) ?? defaultVariant;
   const displayImage = variantImage(product, selected);
   const related = products.filter((p) => p.slug !== product.slug);
+  const selectedSale = saleMetaForVariant(selected.id, selected.price);
 
   return (
     <div className="container-page py-8 sm:py-12">
@@ -86,7 +88,10 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
 
       <div className="mt-4 grid items-start gap-6 lg:mt-6 lg:grid-cols-2 lg:gap-10">
         <div className="mx-auto w-full max-w-xs sm:max-w-sm lg:sticky lg:top-20 lg:max-w-none">
-          <div className="overflow-hidden rounded-2xl border border-border bg-muted/30">
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/30">
+            <span className="sale-badge absolute left-3 top-3 z-10 shadow-md">
+              −{selectedSale.discountPercent}% OFF
+            </span>
             <img
               src={displayImage}
               alt={`${product.name} — ${selected.label}`}
@@ -102,15 +107,25 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
         <div>
           <h1>{product.name}</h1>
           <p className="lead mt-3">{product.tagline}</p>
-          <p className="mt-8 text-4xl font-semibold tracking-tight">{peso(selected.price)}</p>
-          <p className="mt-2 text-base text-muted-foreground">
-            {selected.size} · Code {selected.code} · {selected.points} pts · In stock
+
+          <SalePrice price={selected.price} sale={selectedSale} size="hero" />
+          <ProductUrgencyBanner productSlug={product.slug} sale={selectedSale} />
+
+          <p className="mt-4 text-base text-muted-foreground">
+            {selected.size} · Code {selected.code} · {selected.points} pts ·{" "}
+            <span className={selectedSale.stockLeft <= 6 ? "font-semibold text-destructive" : ""}>
+              {selectedSale.stockLeft <= 6
+                ? `Only ${selectedSale.stockLeft} left`
+                : "In stock — order today"}
+            </span>
           </p>
 
           <div className="mt-8">
             <p className="text-base font-semibold">Choose bundle</p>
             <div className="mt-4 space-y-2">
-              {product.variants.map((variant) => (
+              {product.variants.map((variant) => {
+                const variantSale = saleMetaForVariant(variant.id, variant.price);
+                return (
                 <label
                   key={variant.id}
                   className={`flex cursor-pointer items-center justify-between gap-4 rounded-lg border px-4 py-3.5 text-base transition-colors ${
@@ -141,11 +156,17 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
                       <span className="mt-0.5 block text-sm text-muted-foreground">
                         {variant.size}
                       </span>
+                      {variantSale.stockLeft <= 5 && (
+                        <span className="mt-1 block text-xs font-semibold text-destructive">
+                          Only {variantSale.stockLeft} left
+                        </span>
+                      )}
                     </span>
                   </span>
-                  <span className="shrink-0 font-semibold">{pesoExact(variant.price)}</span>
+                  <SalePrice price={variant.price} sale={variantSale} size="compact" exact />
                 </label>
-              ))}
+              );
+              })}
             </div>
           </div>
 
@@ -175,9 +196,9 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
                 add(selected.id, qty);
                 toast.success(tl.toast.addedToCart(variantCartLabel(product, selected)));
               }}
-              className="inline-flex items-center gap-2 rounded-md bg-brand px-7 py-3.5 text-base font-semibold text-brand-foreground transition-opacity hover:opacity-90"
+              className="cta-pulse inline-flex items-center gap-2 rounded-md bg-brand px-7 py-3.5 text-base font-semibold text-brand-foreground transition-opacity hover:opacity-90"
             >
-              <ShoppingBag className="h-4 w-4" /> Add to cart
+              <ShoppingBag className="h-4 w-4" /> Add to cart — save {selectedSale.discountPercent}%
             </button>
             <Link
               to="/cart"
@@ -272,7 +293,17 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
             </section>
           )}
 
-          <p className="mt-8 text-sm text-muted-foreground">No approved therapeutic claims.</p>
+          <p className="mt-8 text-sm text-muted-foreground">
+            We&apos;re happy to help you choose the right product —{" "}
+            <Link to="/contact" className="font-medium text-brand hover:underline">
+              contact us
+            </Link>{" "}
+            or see the{" "}
+            <Link to="/faq" className="font-medium text-brand hover:underline">
+              FAQ
+            </Link>
+            .
+          </p>
         </div>
       </div>
 

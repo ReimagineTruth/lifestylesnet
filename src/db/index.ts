@@ -96,6 +96,47 @@ function runMigrations(database: Database.Database) {
       value TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS customers (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      name TEXT NOT NULL,
+      phone TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS customer_sessions (
+      token TEXT PRIMARY KEY,
+      customer_id TEXT NOT NULL REFERENCES customers(id),
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS wallets (
+      customer_id TEXT PRIMARY KEY REFERENCES customers(id),
+      balance INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS wallet_transactions (
+      id TEXT PRIMARY KEY,
+      customer_id TEXT NOT NULL REFERENCES customers(id),
+      type TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      balance_after INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      reference TEXT,
+      paymongo_intent_id TEXT,
+      paypal_order_id TEXT,
+      metadata TEXT,
+      created_at TEXT NOT NULL,
+      completed_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_customer_sessions_customer ON customer_sessions(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_wallet_tx_customer ON wallet_transactions(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_wallet_tx_intent ON wallet_transactions(paymongo_intent_id);
     CREATE INDEX IF NOT EXISTS idx_orders_email ON orders(customer_email);
     CREATE INDEX IF NOT EXISTS idx_order_lines_order ON order_lines(order_id);
     CREATE INDEX IF NOT EXISTS idx_feedback_messages_thread ON feedback_messages(thread_id);
@@ -103,6 +144,8 @@ function runMigrations(database: Database.Database) {
   ensureColumn(database, "orders", "paymongo_intent_id", "TEXT");
   ensureColumn(database, "orders", "paypal_order_id", "TEXT");
   ensureColumn(database, "orders", "bank_code", "TEXT");
+  ensureColumn(database, "orders", "customer_id", "TEXT");
+  ensureColumn(database, "orders", "wallet_applied", "INTEGER NOT NULL DEFAULT 0");
 }
 
 function ensureColumn(database: Database.Database, table: string, column: string, type: string) {

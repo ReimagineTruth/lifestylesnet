@@ -225,3 +225,107 @@
   font-size: 1.0625rem;
   line-height: 1.65;
 }
+
+/* Sale / urgency conversion cues */
+.sale-badge {
+  display: inline-block;
+  border-radius: 9999px;
+  background: var(--destructive);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--destructive-foreground);
+}
+
+.countdown-pulse {
+  animation: countdown-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes countdown-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 oklch(0.577 0.245 27.325 / 0.45);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 6px oklch(0.577 0.245 27.325 / 0);
+  }
+}
+
+.live-dot {
+  display: inline-block;
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 9999px;
+  background: oklch(0.65 0.2 145);
+  animation: live-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes live-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.cta-pulse {
+  animation: cta-glow 2.5s ease-in-out infinite;
+}
+
+@keyframes cta-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.78 0.17 122 / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px oklch(0.78 0.17 122 / 0);
+  }
+}
+
+.sale-urgency-banner {
+  animation: urgency-border 3s ease-in-out infinite;
+}
+
+@keyframes urgency-border {
+  0%,
+  100% {
+    border-color: oklch(0.577 0.245 27.325 / 0.25);
+  }
+  50% {
+    border-color: oklch(0.577 0.245 27.325 / 0.55);
+  }
+}
+
+.ambient-attention {
+  animation: ambient-glow 2.4s ease-in-out infinite;
+}
+
+.ambient-hint {
+  animation: ambient-float 3s ease-in-out infinite;
+}
+
+@keyframes ambient-glow {
+  0%,
+  100% {
+    box-shadow: 0 4px 14px oklch(0.78 0.17 122 / 0.25);
+  }
+  50% {
+    box-shadow: 0 4px 22px oklch(0.78 0.17 122 / 0.45);
+  }
+}
+
+@keyframes ambient-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}

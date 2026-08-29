@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Header } from "../components/site/Header";
 import { Footer } from "../components/site/Footer";
 import { FeedbackWidget } from "../components/site/FeedbackWidget";
+import { AmbientSoundWidget } from "../components/site/AmbientSoundWidget";
 import { Toaster } from "../components/ui/sonner";
 import { CartProvider } from "../lib/cart";
 
@@ -143,6 +144,7 @@ function RootComponent() {
             <Outlet />
           </main>
           <Footer />
+          <AmbientSoundWidget />
           <FeedbackWidget />
           <Toaster richColors position="top-center" />
         </div>

@@ -19,7 +19,8 @@ export type PaymentMethod =
   | "billease"
   | "bank"
   | "card"
-  | "paypal";
+  | "paypal"
+  | "wallet";
 
 export type Order = {
   id: string;
@@ -67,6 +68,7 @@ export type AdminDashboardStats = {
     bank: number;
     card: number;
     paypal: number;
+    wallet: number;
   };
 };
 

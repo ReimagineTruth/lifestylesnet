@@ -1,13 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { ensureDbReady } from "@/db/index";
-import * as schema from "@/db/schema";
 import type { FeedbackMessage } from "@/lib/feedback";
-import { dbListFeedbackThreads, newId } from "./db-mapper";
-import { isAdmin, requireAdmin } from "./auth.server";
+import { isAdmin } from "./auth.server";
+import { newId } from "@/lib/id";
+import { withDb } from "@/lib/server-db.server";
 
-function mapMessage(row: typeof schema.feedbackMessages.$inferSelect): FeedbackMessage {
+function mapMessage(
+  row: Awaited<ReturnType<typeof withDb>>["schema"]["feedbackMessages"]["$inferSelect"],
+): FeedbackMessage {
   return {
     id: row.id,
     threadId: row.threadId,
@@ -19,7 +20,7 @@ function mapMessage(row: typeof schema.feedbackMessages.$inferSelect): FeedbackM
 }
 
 async function ensureThread(threadId: string, name?: string, email?: string) {
-  const db = await ensureDbReady();
+  const { db, schema } = await withDb();
   const [existing] = await db
     .select()
     .from(schema.feedbackThreads)
@@ -45,7 +46,7 @@ async function ensureThread(threadId: string, name?: string, email?: string) {
 export const getThreadMessagesFn = createServerFn({ method: "GET" })
   .validator((threadId: string) => threadId)
   .handler(async ({ data: threadId }) => {
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
     const rows = await db
       .select()
       .from(schema.feedbackMessages)
@@ -65,7 +66,7 @@ const sendMessageInput = z.object({
 export const sendFeedbackMessageFn = createServerFn({ method: "POST" })
   .validator((data: unknown) => sendMessageInput.parse(data))
   .handler(async ({ data }) => {
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
     await ensureThread(data.threadId, data.name, data.email);
     const now = new Date().toISOString();
     const id = newId();
@@ -96,6 +97,7 @@ export const listFeedbackThreadsFn = createServerFn({ method: "GET" })
   .validator((token: string) => token)
   .handler(async ({ data: token }) => {
     if (!(await isAdmin(token))) throw new Error("Unauthorized");
+    const { dbListFeedbackThreads } = await import("./db-mapper.server");
     return dbListFeedbackThreads();
   });
 
@@ -103,7 +105,7 @@ export const listAllFeedbackMessagesFn = createServerFn({ method: "GET" })
   .validator((token: string) => token)
   .handler(async ({ data: token }) => {
     if (!(await isAdmin(token))) throw new Error("Unauthorized");
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
     const rows = await db
       .select()
       .from(schema.feedbackMessages)

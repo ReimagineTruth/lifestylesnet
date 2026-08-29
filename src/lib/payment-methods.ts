@@ -1,5 +1,5 @@
 /** Checkout payment groups — each maps to one or more stored `paymentMethod` values. */
-export const CHECKOUT_PAY_CHOICES = ["cod", "qr_ph", "bank", "paypal"] as const;
+export const CHECKOUT_PAY_CHOICES = ["cod", "qr_ph", "bank", "paypal", "wallet"] as const;
 
 export type CheckoutPayChoice = (typeof CHECKOUT_PAY_CHOICES)[number];
 
@@ -10,6 +10,7 @@ export const DEFAULT_PAYMENT_METHODS_ENABLED: Record<CheckoutPayChoice, boolean>
   qr_ph: true,
   bank: true,
   paypal: true,
+  wallet: true,
 };
 
 export const PAYMENT_METHOD_META: Record<
@@ -34,6 +35,10 @@ export const PAYMENT_METHOD_META: Record<
     label: "PayPal or card",
     description: "PayPal wallet, debit/credit card, and other PayPal checkout options.",
     configureHint: "Set PAYPAL_CLIENT_ID and VITE_PAYPAL_CLIENT_ID in environment variables.",
+  },
+  wallet: {
+    label: "Wallet balance",
+    description: "Pay using the customer wallet balance after top-up.",
   },
 };
 
@@ -81,6 +86,7 @@ export function paymentProviderConfigured(): Record<CheckoutPayChoice, boolean> 
     qr_ph: paymongo,
     bank: paymongo,
     paypal: isPaypalConfigured(),
+    wallet: true,
   };
 }
 
@@ -103,6 +109,7 @@ export function firstAvailablePaymentMethod(
 export function paymentMethodToCheckoutChoice(method: string): CheckoutPayChoice | null {
   if (method === "cod") return "cod";
   if (method === "paypal") return "paypal";
+  if (method === "wallet") return "wallet";
   if (method === "bank") return "bank";
   if (
     method === "qr_ph" ||

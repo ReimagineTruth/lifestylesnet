@@ -419,6 +419,8 @@ function OverviewTab({
             <div className="flex justify-between">
               <dt>PayPal</dt>
               <dd>{stats.byPayment.paypal}</dd>
+              <dt>Wallet</dt>
+              <dd>{stats.byPayment.wallet}</dd>
             </div>
             <div className="flex justify-between border-t border-border pt-2 font-semibold">
               <dt>Cancelled</dt>
@@ -764,18 +766,21 @@ function PaymentMethodsSettings({ token }: { token: string }) {
     qr_ph: true,
     bank: true,
     paypal: true,
+    wallet: true,
   });
   const [configured, setConfigured] = useState<Record<CheckoutPayChoice, boolean>>({
     cod: true,
     qr_ph: false,
     bank: false,
     paypal: false,
+    wallet: true,
   });
   const [effective, setEffective] = useState<Record<CheckoutPayChoice, boolean>>({
     cod: true,
     qr_ph: false,
     bank: false,
     paypal: false,
+    wallet: true,
   });
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<CheckoutPayChoice | null>(null);

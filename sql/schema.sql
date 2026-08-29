@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS orders (
   status TEXT NOT NULL,
   payment_method TEXT NOT NULL,
   payment_reference TEXT,
+  customer_id TEXT,
   customer_name TEXT NOT NULL,
   customer_email TEXT NOT NULL,
   customer_phone TEXT NOT NULL,
@@ -40,7 +41,8 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_notes TEXT,
   subtotal INTEGER NOT NULL,
   shipping INTEGER NOT NULL,
-  total INTEGER NOT NULL
+  total INTEGER NOT NULL,
+  wallet_applied INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS order_lines (
@@ -80,3 +82,43 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
 CREATE INDEX IF NOT EXISTS idx_orders_email ON orders(customer_email);
 CREATE INDEX IF NOT EXISTS idx_order_lines_order ON order_lines(order_id);
 CREATE INDEX IF NOT EXISTS idx_feedback_messages_thread ON feedback_messages(thread_id);
+
+CREATE TABLE IF NOT EXISTS customers (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  name TEXT NOT NULL,
+  phone TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS customer_sessions (
+  token TEXT PRIMARY KEY,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS wallets (
+  customer_id TEXT PRIMARY KEY REFERENCES customers(id),
+  balance INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id TEXT PRIMARY KEY,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  type TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  balance_after INTEGER,
+  status TEXT NOT NULL,
+  payment_method TEXT,
+  paymongo_intent_id TEXT,
+  paypal_order_id TEXT,
+  reference TEXT,
+  created_at TEXT NOT NULL,
+  completed_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_customer ON wallet_transactions(customer_id);

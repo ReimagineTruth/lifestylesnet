@@ -1,14 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { ensureDbReady } from "@/db/index";
-import * as schema from "@/db/schema";
 import type { Order, OrderLine, OrderStatus } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT, newOrderId } from "@/lib/orders";
-import { dbGetVariant, newId } from "./db-mapper";
-import { isAdmin, requireAdmin } from "./auth.server";
-import { createPaymongoPayment, siteUrl } from "./paymongo-core.server";
+import { isAdmin, requireAdmin, requireCustomer } from "./auth.server";
 import type { BankCode, PaymongoCheckoutMethod } from "./paymongo";
+import { withDb } from "@/lib/server-db.server";
+import { newId } from "@/lib/id";
+
+type OrderRow = Awaited<ReturnType<typeof withDb>>["schema"]["orders"]["$inferSelect"];
+type OrderLineRow = Awaited<ReturnType<typeof withDb>>["schema"]["orderLines"]["$inferSelect"];
 
 const createOrderInput = z.object({
   customer: z.object({
@@ -32,6 +33,7 @@ const createOrderInput = z.object({
     "bank",
     "card",
     "paypal",
+    "wallet",
   ]),
   bankCode: z.enum(["bpi", "ubp", "bdo", "landbank", "metrobank"]).optional(),
   preferredProvider: z.string().optional(),
@@ -42,12 +44,11 @@ const createOrderInput = z.object({
       qty: z.number().int().positive(),
     }),
   ),
+  customerToken: z.string().optional(),
+  useWalletBalance: z.boolean().optional(),
 });
 
-function mapOrder(
-  row: typeof schema.orders.$inferSelect,
-  lines: (typeof schema.orderLines.$inferSelect)[],
-): Order {
+function mapOrder(row: OrderRow, lines: OrderLineRow[]): Order {
   const customer: Order["customer"] = {
     name: row.customerName,
     email: row.customerEmail,
@@ -86,7 +87,8 @@ function mapOrder(
 export const createOrderFn = createServerFn({ method: "POST" })
   .validator((data: unknown) => createOrderInput.parse(data))
   .handler(async ({ data }) => {
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
+    const { dbGetVariant } = await import("./db-mapper.server");
     const resolvedLines: OrderLine[] = [];
 
     for (const item of data.items) {
@@ -116,10 +118,53 @@ export const createOrderFn = createServerFn({ method: "POST" })
       throw new Error("This payment method is not available. Please choose another option.");
     }
 
-    let paymongoIntentId: string | null = null;
-    let paymentResult: Awaited<ReturnType<typeof createPaymongoPayment>> | null = null;
+    let customerId: string | null = null;
+    if (data.customerToken) {
+      customerId = await requireCustomer(data.customerToken);
+    }
+    if (data.paymentMethod === "wallet" && !customerId) {
+      throw new Error("Please sign in to pay with your wallet balance.");
+    }
+    if (data.useWalletBalance && !customerId) {
+      throw new Error("Please sign in to apply your wallet balance.");
+    }
+    if (data.useWalletBalance && data.paymentMethod === "cod") {
+      throw new Error("Wallet balance cannot be combined with cash on delivery.");
+    }
 
-    if (data.paymentMethod !== "cod" && data.paymentMethod !== "paypal") {
+    let walletApplied = 0;
+    if (customerId) {
+      const { getCustomerWalletBalance } = await import("@/lib/wallet.server");
+      const balance = await getCustomerWalletBalance(customerId);
+
+      if (data.paymentMethod === "wallet") {
+        if (balance < total) {
+          throw new Error("Insufficient wallet balance. Top up your wallet or choose another payment method.");
+        }
+        walletApplied = total;
+      } else if (data.useWalletBalance && balance > 0) {
+        walletApplied = Math.min(balance, total);
+      }
+    }
+
+    const chargeAmount = total - walletApplied;
+
+    let paymongoIntentId: string | null = null;
+    let paymentResult: Awaited<
+      ReturnType<
+        Awaited<typeof import("./paymongo-core.server")>["createPaymongoPayment"]
+      >
+    > | null = null;
+    let orderStatus: OrderStatus = "pending";
+
+    if (
+      chargeAmount > 0 &&
+      data.paymentMethod !== "cod" &&
+      data.paymentMethod !== "paypal" &&
+      data.paymentMethod !== "wallet"
+    ) {
+      const { createPaymongoPayment } = await import("./paymongo-core.server");
+      const { siteUrl } = await import("@/lib/site-url");
       const returnUrl = `${siteUrl()}/order/${orderId}?payment=return`;
       const extraMetadata: Record<string, string> = {};
       if (data.preferredProvider) {
@@ -130,7 +175,7 @@ export const createOrderFn = createServerFn({ method: "POST" })
       }
       paymentResult = await createPaymongoPayment(
         orderId,
-        total,
+        chargeAmount,
         data.paymentMethod as PaymongoCheckoutMethod,
         returnUrl,
         data.bankCode as BankCode | undefined,
@@ -142,11 +187,12 @@ export const createOrderFn = createServerFn({ method: "POST" })
     await db.insert(schema.orders).values({
       id: orderId,
       createdAt: now,
-      status: "pending",
+      status: orderStatus,
       paymentMethod: data.paymentMethod,
       paymentReference: null,
       paymongoIntentId,
       bankCode: data.bankCode ?? null,
+      customerId,
       customerName: data.customer.name,
       customerEmail: data.customer.email.toLowerCase(),
       customerPhone: data.customer.phone,
@@ -158,6 +204,7 @@ export const createOrderFn = createServerFn({ method: "POST" })
       subtotal,
       shipping,
       total,
+      walletApplied,
     });
 
     for (const line of resolvedLines) {
@@ -170,6 +217,24 @@ export const createOrderFn = createServerFn({ method: "POST" })
         qty: line.qty,
         unitPrice: line.price,
       });
+    }
+
+    if (data.paymentMethod === "wallet") {
+      const { debitWalletForOrder } = await import("@/lib/wallet.server");
+      await debitWalletForOrder(customerId!, orderId, total);
+      await db
+        .update(schema.orders)
+        .set({ status: "paid", paymentReference: "wallet" })
+        .where(eq(schema.orders.id, orderId));
+      orderStatus = "paid";
+    } else if (chargeAmount === 0 && walletApplied > 0) {
+      const { applyPendingWalletDebitForOrder } = await import("@/lib/wallet.server");
+      await applyPendingWalletDebitForOrder(orderId);
+      await db
+        .update(schema.orders)
+        .set({ status: "paid", paymentReference: "wallet" })
+        .where(eq(schema.orders.id, orderId));
+      orderStatus = "paid";
     }
 
     const [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, orderId));
@@ -188,7 +253,7 @@ export const createOrderFn = createServerFn({ method: "POST" })
 export const getOrderFn = createServerFn({ method: "GET" })
   .validator((id: string) => id)
   .handler(async ({ data: id }) => {
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
     const [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, id));
     if (!row) return null;
     const lines = await db
@@ -201,7 +266,7 @@ export const getOrderFn = createServerFn({ method: "GET" })
 export const listOrdersByEmailFn = createServerFn({ method: "GET" })
   .validator((email: string) => email.trim().toLowerCase())
   .handler(async ({ data: email }) => {
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
     const rows = await db
       .select()
       .from(schema.orders)
@@ -222,7 +287,7 @@ export const listAllOrdersFn = createServerFn({ method: "GET" })
   .validator((token: string) => token)
   .handler(async ({ data: token }) => {
     await requireAdmin(token);
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
     const rows = await db.select().from(schema.orders).orderBy(desc(schema.orders.createdAt));
     const allLines = await db.select().from(schema.orderLines);
     return rows
@@ -239,7 +304,7 @@ export const updateOrderStatusFn = createServerFn({ method: "POST" })
   .validator((data: { token: string; id: string; status: OrderStatus }) => data)
   .handler(async ({ data }) => {
     await requireAdmin(data.token);
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
     await db
       .update(schema.orders)
       .set({ status: data.status })
@@ -263,8 +328,8 @@ export const updateOrderAdminFn = createServerFn({ method: "POST" })
   .validator((data: unknown) => updateOrderAdminInput.parse(data))
   .handler(async ({ data }) => {
     await requireAdmin(data.token);
-    const db = await ensureDbReady();
-    const patch: Partial<typeof schema.orders.$inferInsert> = {};
+    const { db, schema } = await withDb();
+    const patch: Partial<OrderRow> = {};
     if (data.status) patch.status = data.status;
     if (data.reference !== undefined) patch.paymentReference = data.reference || null;
     if (Object.keys(patch).length === 0) throw new Error("Nothing to update");
@@ -282,7 +347,7 @@ export const getAdminDashboardFn = createServerFn({ method: "GET" })
   .validator((token: string) => token)
   .handler(async ({ data: token }) => {
     await requireAdmin(token);
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
     const rows = await db.select().from(schema.orders);
     const threads = await db.select().from(schema.feedbackThreads);
     const today = new Date().toISOString().slice(0, 10);
@@ -313,6 +378,7 @@ export const getAdminDashboardFn = createServerFn({ method: "GET" })
         bank: rows.filter((r) => r.paymentMethod === "bank").length,
         card: rows.filter((r) => r.paymentMethod === "card").length,
         paypal: rows.filter((r) => r.paymentMethod === "paypal").length,
+        wallet: rows.filter((r) => r.paymentMethod === "wallet").length,
       },
     };
   });
@@ -322,7 +388,7 @@ export const adminLoginFn = createServerFn({ method: "POST" })
   .handler(async ({ data: password }) => {
     const expected = process.env["ADMIN_PASSWORD"] ?? "lifestyles-admin";
     if (password !== expected) throw new Error("Invalid password");
-    const db = await ensureDbReady();
+    const { db, schema } = await withDb();
     const token = newId("adm-");
     const now = new Date();
     const expires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);

@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
-import { ensureDbReady } from "@/db/index";
-import * as schema from "@/db/schema";
-import { siteUrl } from "@/lib/paymongo-core.server";
+import { withDb } from "@/lib/server-db.server";
+import { siteUrl } from "@/lib/site-url";
 
 const PAYPAL_API = {
   live: "https://api-m.paypal.com",
@@ -115,10 +114,11 @@ export function getPayPalPublicConfig() {
 }
 
 export async function createPayPalCheckoutOrder(
-  orderId: string,
+  referenceId: string,
   amountPhp: number,
   returnUrl: string,
   cancelUrl: string,
+  options?: { description?: string },
 ) {
   const order = await paypalRequest<PayPalOrder>("/v2/checkout/orders", {
     method: "POST",
@@ -126,9 +126,9 @@ export async function createPayPalCheckoutOrder(
       intent: "CAPTURE",
       purchase_units: [
         {
-          reference_id: orderId,
-          custom_id: orderId,
-          description: `Lifestyles PH order ${orderId}`,
+          reference_id: referenceId,
+          custom_id: referenceId,
+          description: options?.description ?? `Lifestyles PH order ${referenceId}`,
           amount: {
             currency_code: "PHP",
             value: formatPhpAmount(amountPhp),
@@ -180,8 +180,8 @@ export async function markOrderPaidByPayPal(opts: {
   paypalOrderId?: string;
   captureId?: string;
 }) {
-  const db = await ensureDbReady();
-  let row: typeof schema.orders.$inferSelect | undefined;
+  const { db, schema } = await withDb();
+  let row: Awaited<ReturnType<typeof withDb>>["schema"]["orders"]["$inferSelect"] | undefined;
 
   if (opts.orderId) {
     [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, opts.orderId));
@@ -193,6 +193,9 @@ export async function markOrderPaidByPayPal(opts: {
   }
 
   if (!row || row.status === "paid" || row.status === "cancelled") return null;
+
+  const { applyPendingWalletDebitForOrder } = await import("@/lib/wallet.server");
+  await applyPendingWalletDebitForOrder(row.id);
 
   await db
     .update(schema.orders)
@@ -231,13 +234,21 @@ export async function handlePayPalWebhook(request: Request): Promise<Response> {
     if (eventType && paidEvents.has(eventType) && resource?.status === "COMPLETED") {
       const captureId = resource.id?.startsWith("pay_") ? resource.id : undefined;
       const paypalOrderId = resource.supplementary_data?.related_ids?.order_id;
-      const orderId = resource.custom_id;
+      const referenceId = resource.custom_id;
 
-      await markOrderPaidByPayPal({
-        ...(orderId ? { orderId } : {}),
+      const orderPaid = await markOrderPaidByPayPal({
+        ...(referenceId ? { orderId: referenceId } : {}),
         ...(paypalOrderId ? { paypalOrderId } : {}),
         ...(captureId ? { captureId } : {}),
       });
+
+      if (!orderPaid && referenceId?.startsWith("top-")) {
+        const { completeWalletTopup } = await import("@/lib/wallet.server");
+        await completeWalletTopup({
+          topupId: referenceId,
+          ...(paypalOrderId ? { paymentId: captureId ?? paypalOrderId } : {}),
+        });
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -255,5 +266,13 @@ export function paypalReturnUrls(orderId: string) {
   return {
     returnUrl: `${base}/order/${orderId}?payment=return&status=success`,
     cancelUrl: `${base}/order/${orderId}?payment=return&status=cancel`,
+  };
+}
+
+export function paypalTopupReturnUrls(topupId: string) {
+  const base = siteUrl();
+  return {
+    returnUrl: `${base}/account?topup=${topupId}&status=success`,
+    cancelUrl: `${base}/account?topup=${topupId}&status=cancel`,
   };
 }

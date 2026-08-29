@@ -1,7 +1,9 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Leaf, Truck, ShieldCheck } from "lucide-react";
 import { LiveCustomerReviews } from "@/components/site/LiveCustomerReviews";
-import { filterVisibleProducts, products, peso, productFromPrice } from "@/lib/products";
+import { SalePrice } from "@/components/site/SalePrice";
+import { filterVisibleProducts, products, productFromPrice } from "@/lib/products";
+import { saleMetaForProduct } from "@/lib/sale-urgency";
 import { getTestProductVisibleFn } from "@/lib/settings.server";
 
 export const Route = createFileRoute("/")({
@@ -121,14 +123,20 @@ function Index() {
           </div>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {visibleProducts.map((p) => (
+            {visibleProducts.map((p) => {
+              const fromPrice = productFromPrice(p);
+              const sale = saleMetaForProduct(p.slug, fromPrice, p.variants[0]?.id);
+              return (
               <Link
                 key={p.slug}
                 to="/products/$slug"
                 params={{ slug: p.slug }}
                 className="group rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-lg"
               >
-                <div className="overflow-hidden rounded-lg bg-muted/40">
+                <div className="relative overflow-hidden rounded-lg bg-muted/40">
+                  <span className="sale-badge absolute left-2 top-2 z-10 text-[10px]">
+                    −{sale.discountPercent}%
+                  </span>
                   <img
                     src={p.image}
                     alt={`${p.name} — ${p.tagline}`}
@@ -142,11 +150,10 @@ function Index() {
                 <p className="mt-2 line-clamp-2 text-base leading-relaxed text-muted-foreground">
                   {p.tagline}
                 </p>
-                <p className="mt-4 text-lg font-semibold text-foreground">
-                  From {peso(productFromPrice(p))}
-                </p>
+                <SalePrice price={fromPrice} sale={sale} size="card" />
               </Link>
-            ))}
+            );
+            })}
           </div>
 
           <div className="mt-8 text-center sm:hidden">

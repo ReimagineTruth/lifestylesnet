@@ -43,6 +43,7 @@ const methodLabel: Record<PaymentMethod, string> = {
   bank: "Online banking (PayMongo)",
   card: "Card (PayMongo)",
   paypal: "PayPal or card",
+  wallet: "Wallet balance",
 };
 
 function OrderPage() {

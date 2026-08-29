@@ -34,6 +34,7 @@ export const orders = sqliteTable("orders", {
   paymongoIntentId: text("paymongo_intent_id"),
   paypalOrderId: text("paypal_order_id"),
   bankCode: text("bank_code"),
+  customerId: text("customer_id"),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone").notNull(),
@@ -45,6 +46,7 @@ export const orders = sqliteTable("orders", {
   subtotal: integer("subtotal").notNull(),
   shipping: integer("shipping").notNull(),
   total: integer("total").notNull(),
+  walletApplied: integer("wallet_applied").notNull().default(0),
 });
 
 export const orderLines = sqliteTable("order_lines", {
@@ -88,4 +90,48 @@ export const adminSessions = sqliteTable("admin_sessions", {
 export const appSettings = sqliteTable("app_settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
+});
+
+export const customers = sqliteTable("customers", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const customerSessions = sqliteTable("customer_sessions", {
+  token: text("token").primaryKey(),
+  customerId: text("customer_id")
+    .notNull()
+    .references(() => customers.id),
+  createdAt: text("created_at").notNull(),
+  expiresAt: text("expires_at").notNull(),
+});
+
+export const wallets = sqliteTable("wallets", {
+  customerId: text("customer_id")
+    .primaryKey()
+    .references(() => customers.id),
+  balance: integer("balance").notNull().default(0),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const walletTransactions = sqliteTable("wallet_transactions", {
+  id: text("id").primaryKey(),
+  customerId: text("customer_id")
+    .notNull()
+    .references(() => customers.id),
+  type: text("type").notNull(),
+  amount: integer("amount").notNull(),
+  balanceAfter: integer("balance_after").notNull(),
+  status: text("status").notNull(),
+  reference: text("reference"),
+  paymongoIntentId: text("paymongo_intent_id"),
+  paypalOrderId: text("paypal_order_id"),
+  metadata: text("metadata"),
+  createdAt: text("created_at").notNull(),
+  completedAt: text("completed_at"),
 });

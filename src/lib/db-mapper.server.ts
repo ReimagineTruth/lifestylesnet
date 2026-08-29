@@ -1,13 +1,15 @@
 import { asc, desc, eq } from "drizzle-orm";
 import type { Product, ProductVariant } from "@/lib/catalog-data";
 import { getVariant as getCatalogVariant, migrateLegacyCartId } from "@/lib/catalog-data";
-import { ensureDbReady } from "@/db/index";
-import * as schema from "@/db/schema";
+import { newId } from "@/lib/id";
+import { withDb } from "@/lib/server-db.server";
 
-function rowToProduct(
-  row: typeof schema.products.$inferSelect,
-  variants: (typeof schema.productVariants.$inferSelect)[],
-): Product {
+export { newId };
+
+type ProductRow = Awaited<ReturnType<typeof withDb>>["schema"]["products"]["$inferSelect"];
+type VariantRow = Awaited<ReturnType<typeof withDb>>["schema"]["productVariants"]["$inferSelect"];
+
+function rowToProduct(row: ProductRow, variants: VariantRow[]): Product {
   return {
     slug: row.slug,
     cateId: row.cateId,
@@ -31,7 +33,7 @@ function rowToProduct(
 }
 
 export async function dbListProducts() {
-  const db = await ensureDbReady();
+  const { db, schema } = await withDb();
   const rows = await db.select().from(schema.products).orderBy(asc(schema.products.name));
   const allVariants = await db.select().from(schema.productVariants);
   return rows.map((row) =>
@@ -43,7 +45,7 @@ export async function dbListProducts() {
 }
 
 export async function dbGetProduct(slug: string) {
-  const db = await ensureDbReady();
+  const { db, schema } = await withDb();
   const [row] = await db.select().from(schema.products).where(eq(schema.products.slug, slug));
   if (!row) return undefined;
   const variants = await db
@@ -55,7 +57,7 @@ export async function dbGetProduct(slug: string) {
 
 export async function dbGetVariant(variantId: string) {
   const resolvedId = migrateLegacyCartId(variantId);
-  const db = await ensureDbReady();
+  const { db, schema } = await withDb();
 
   for (const id of new Set([resolvedId, variantId])) {
     const [variant] = await db
@@ -77,12 +79,8 @@ export async function dbAllVariants() {
   return list.flatMap((product) => product.variants.map((variant) => ({ product, variant })));
 }
 
-export function newId(prefix = "") {
-  return `${prefix}${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
 export async function dbListFeedbackThreads() {
-  const db = await ensureDbReady();
+  const { db, schema } = await withDb();
   const threads = await db
     .select()
     .from(schema.feedbackThreads)

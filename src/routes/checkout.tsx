@@ -18,6 +18,11 @@ import { QRPH_PROVIDERS, qrScanHint, type QrPhProvider } from "@/lib/qrphProvide
 import { getPaymentMethodsForCheckoutFn } from "@/lib/settings.server";
 import { CHECKOUT_PAY_CHOICES, firstAvailablePaymentMethod } from "@/lib/payment-methods";
 import { tl } from "@/lib/tagalog";
+import {
+  loadCustomerToken,
+  type CustomerProfile,
+} from "@/lib/customer-auth";
+import { verifyCustomerFn } from "@/lib/customer-auth.server";
 
 export const Route = createFileRoute("/checkout")({
   loader: async () => {
@@ -48,7 +53,8 @@ const schema = z.object({
 });
 
 type Step = "delivery" | "payment" | "qr" | "paypal" | "done";
-type PayChoice = "cod" | "qr_ph" | "bank" | "paypal";
+type PayChoice = "cod" | "qr_ph" | "bank" | "paypal" | "wallet";
+type WalletRemainderMethod = "qr_ph" | "bank" | "paypal";
 
 type FormState = {
   name: string;
@@ -83,6 +89,7 @@ function CheckoutPage() {
   const { items, clear, ready } = useCart();
   const createOrder = useServerFn(createOrderFn);
   const confirmPayment = useServerFn(confirmPaymongoPaymentFn);
+  const verifyCustomer = useServerFn(verifyCustomerFn);
 
   const [step, setStep] = useState<Step>("delivery");
   const [form, setForm] = useState<FormState>({
@@ -100,18 +107,21 @@ function CheckoutPage() {
   const [payChoice, setPayChoice] = useState<PayChoice>("qr_ph");
   const [qrProvider, setQrProvider] = useState<QrPhProvider>(QRPH_PROVIDERS[0]!);
   const [bankCode, setBankCode] = useState<BankCode>("bpi");
+  const [walletRemainderMethod, setWalletRemainderMethod] =
+    useState<WalletRemainderMethod>("qr_ph");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
   const [checkoutSummary, setCheckoutSummary] = useState<CheckoutSummary | null>(null);
   const [paid, setPaid] = useState(false);
-
-  const hasPaymentMethod = CHECKOUT_PAY_CHOICES.some((key) => paymentMethods[key]);
+  const [customer, setCustomer] = useState<CustomerProfile | null>(null);
+  const customerToken = loadCustomerToken();
 
   useEffect(() => {
-    if (paymentMethods[payChoice]) return;
-    const next = firstAvailablePaymentMethod(paymentMethods);
-    if (next) setPayChoice(next);
-  }, [paymentMethods, payChoice]);
+    if (!customerToken) return;
+    void verifyCustomer({ data: customerToken })
+      .then(setCustomer)
+      .catch(() => setCustomer(null));
+  }, [customerToken, verifyCustomer]);
 
   useEffect(() => {
     const savedEmail = loadCustomerEmail();
@@ -131,6 +141,38 @@ function CheckoutPage() {
   const subtotal = lines.reduce((sum, l) => sum + l.line!.variant.price * l.item.qty, 0);
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
   const total = subtotal + shipping;
+
+  const walletBalance = customer?.balance ?? 0;
+  const walletCanPayFull =
+    Boolean(paymentMethods.wallet) && customer !== null && walletBalance >= total;
+  const walletCanPayPartial =
+    Boolean(paymentMethods.wallet) &&
+    customer !== null &&
+    walletBalance > 0 &&
+    walletBalance < total;
+  const walletSelectable = walletCanPayFull || walletCanPayPartial;
+  const walletShortfall = walletCanPayPartial ? total - walletBalance : 0;
+
+  const walletAvailable = walletSelectable;
+
+  const hasPaymentMethod = CHECKOUT_PAY_CHOICES.some((key) => {
+    if (key === "wallet") return walletAvailable;
+    return paymentMethods[key];
+  });
+
+  useEffect(() => {
+    if (paymentMethods.qr_ph) setWalletRemainderMethod("qr_ph");
+    else if (paymentMethods.bank) setWalletRemainderMethod("bank");
+    else if (paymentMethods.paypal) setWalletRemainderMethod("paypal");
+  }, [paymentMethods]);
+
+  useEffect(() => {
+    if (paymentMethods[payChoice as keyof typeof paymentMethods] && payChoice !== "wallet") return;
+    if (payChoice === "wallet" && walletAvailable) return;
+    const methods = { ...paymentMethods, ...(walletAvailable ? { wallet: true } : {}) };
+    const next = firstAvailablePaymentMethod(methods as Record<PayChoice, boolean>);
+    if (next) setPayChoice(next);
+  }, [paymentMethods, payChoice, walletAvailable]);
 
   const summaryLines = checkoutSummary?.lines ?? lines;
   const summarySubtotal = checkoutSummary?.subtotal ?? subtotal;
@@ -211,7 +253,15 @@ function CheckoutPage() {
       toast.error("Pumili ng bangko para sa online banking.");
       return;
     }
-    if (!paymentMethods[payChoice]) {
+    if (payChoice === "wallet" && !walletAvailable) {
+      toast.error("Sign in and top up your wallet, or choose another payment method.");
+      return;
+    }
+    if (payChoice === "wallet" && walletCanPayPartial && !paymentMethods[walletRemainderMethod]) {
+      toast.error("Pick how to pay the remaining balance.");
+      return;
+    }
+    if (payChoice !== "wallet" && !paymentMethods[payChoice as keyof typeof paymentMethods]) {
       toast.error("This payment method is not available. Please choose another option.");
       return;
     }
@@ -219,6 +269,13 @@ function CheckoutPage() {
     setSubmitting(true);
     const v = schema.parse(form);
     const orderSnapshot: CheckoutSummary = { lines, subtotal, shipping, total };
+    const walletPartial = payChoice === "wallet" && walletCanPayPartial;
+    const effectivePaymentMethod: PayChoice | "wallet" =
+      payChoice === "wallet"
+        ? walletCanPayFull
+          ? "wallet"
+          : walletRemainderMethod
+        : payChoice;
 
     void createOrder({
       data: {
@@ -233,15 +290,22 @@ function CheckoutPage() {
           ...(v.notes ? { notes: v.notes } : {}),
         },
         paymentMethod:
-          payChoice === "cod"
+          effectivePaymentMethod === "cod"
             ? "cod"
-            : payChoice === "bank"
+            : effectivePaymentMethod === "bank"
               ? "bank"
-              : payChoice === "paypal"
+              : effectivePaymentMethod === "paypal"
                 ? "paypal"
-                : "qr_ph",
-        ...(payChoice === "bank" ? { bankCode } : {}),
-        ...(payChoice === "qr_ph"
+                : effectivePaymentMethod === "wallet"
+                  ? "wallet"
+                  : "qr_ph",
+        ...(customerToken ? { customerToken } : {}),
+        ...(walletPartial ? { useWalletBalance: true } : {}),
+        ...(effectivePaymentMethod === "bank" || (walletPartial && walletRemainderMethod === "bank")
+          ? { bankCode }
+          : {}),
+        ...(effectivePaymentMethod === "qr_ph" ||
+        (walletPartial && walletRemainderMethod === "qr_ph")
           ? {
               preferredProvider: qrProvider.id,
               preferredProviderName: qrProvider.label,
@@ -271,7 +335,7 @@ function CheckoutPage() {
           return;
         }
 
-        if (payChoice === "qr_ph") {
+        if (payChoice === "qr_ph" || (payChoice === "wallet" && walletPartial && walletRemainderMethod === "qr_ph")) {
           if (!payment?.qrImageUrl) {
             throw new Error(
               "QR code was not returned by PayMongo. Enable QR Ph in your PayMongo dashboard.",
@@ -293,9 +357,17 @@ function CheckoutPage() {
           return;
         }
 
-        if (payChoice === "paypal") {
+        if (payChoice === "paypal" || (payChoice === "wallet" && walletPartial && walletRemainderMethod === "paypal")) {
           setStep("paypal");
           toast.success("Order created — complete payment with PayPal.");
+          return;
+        }
+
+        if (payChoice === "wallet" && walletCanPayFull) {
+          clear();
+          toast.success(tl.toast.orderPlaced(order.id));
+          setPaid(true);
+          setStep("done");
           return;
         }
 
@@ -396,6 +468,156 @@ function CheckoutPage() {
                           </span>
                         </span>
                       </label>
+                    )}
+
+                    {paymentMethods.wallet && (
+                      <>
+                        <p className="mt-6 text-sm font-semibold">Wallet balance</p>
+                        {!customer ? (
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            <Link to="/account" className="font-medium text-brand hover:underline">
+                              Sign in
+                            </Link>{" "}
+                            to pay with your wallet balance.
+                          </p>
+                        ) : (
+                          <div className="mt-3 space-y-2">
+                            <label
+                              className={cn(
+                                "flex items-start gap-3 rounded-lg border p-4",
+                                walletSelectable ? "cursor-pointer" : "cursor-not-allowed opacity-60",
+                                payChoice === "wallet" ? "border-brand bg-brand-soft" : "border-border",
+                              )}
+                            >
+                              <input
+                                type="radio"
+                                checked={payChoice === "wallet"}
+                                onChange={() => setPayChoice("wallet")}
+                                disabled={!walletSelectable}
+                                className="mt-1 accent-brand"
+                              />
+                              <span>
+                                <span className="block text-sm font-semibold">Pay with wallet</span>
+                                <span className="text-sm text-muted-foreground">
+                                  Available: {peso(walletBalance)}
+                                  {walletCanPayFull && ` · Covers full order (${peso(total)})`}
+                                  {walletCanPayPartial &&
+                                    ` · ${peso(walletBalance)} from wallet, ${peso(walletShortfall)} still due`}
+                                </span>
+                                {walletBalance < total && (
+                                  <span className="mt-1 block text-xs text-muted-foreground">
+                                    <Link
+                                      to="/account"
+                                      className="font-medium text-brand hover:underline"
+                                    >
+                                      Top up wallet
+                                    </Link>{" "}
+                                    for full wallet payment.
+                                  </span>
+                                )}
+                              </span>
+                            </label>
+
+                            {payChoice === "wallet" && walletCanPayPartial && (
+                              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                                <p className="text-sm font-semibold">
+                                  Pay remaining {peso(walletShortfall)} with
+                                </p>
+                                <div className="mt-3 space-y-2">
+                                  {paymentMethods.qr_ph && (
+                                    <label
+                                      className={cn(
+                                        "flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-3",
+                                        walletRemainderMethod === "qr_ph"
+                                          ? "border-brand bg-brand-soft"
+                                          : "border-border",
+                                      )}
+                                    >
+                                      <input
+                                        type="radio"
+                                        checked={walletRemainderMethod === "qr_ph"}
+                                        onChange={() => setWalletRemainderMethod("qr_ph")}
+                                        className="accent-brand"
+                                      />
+                                      <span className="text-sm font-semibold">QR Ph & e-wallets</span>
+                                    </label>
+                                  )}
+                                  {paymentMethods.bank && (
+                                    <>
+                                      <label
+                                        className={cn(
+                                          "flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-3",
+                                          walletRemainderMethod === "bank"
+                                            ? "border-brand bg-brand-soft"
+                                            : "border-border",
+                                        )}
+                                      >
+                                        <input
+                                          type="radio"
+                                          checked={walletRemainderMethod === "bank"}
+                                          onChange={() => setWalletRemainderMethod("bank")}
+                                          className="accent-brand"
+                                        />
+                                        <span className="text-sm font-semibold">Online banking</span>
+                                      </label>
+                                      {walletRemainderMethod === "bank" && (
+                                        <select
+                                          value={bankCode}
+                                          onChange={(e) => setBankCode(e.target.value as BankCode)}
+                                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        >
+                                          {BANK_OPTIONS.map((b) => (
+                                            <option key={b.code} value={b.code}>
+                                              {b.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      )}
+                                    </>
+                                  )}
+                                  {paymentMethods.paypal && (
+                                    <label
+                                      className={cn(
+                                        "flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-3",
+                                        walletRemainderMethod === "paypal"
+                                          ? "border-brand bg-brand-soft"
+                                          : "border-border",
+                                      )}
+                                    >
+                                      <input
+                                        type="radio"
+                                        checked={walletRemainderMethod === "paypal"}
+                                        onChange={() => setWalletRemainderMethod("paypal")}
+                                        className="accent-brand"
+                                      />
+                                      <span className="text-sm font-semibold">PayPal or card</span>
+                                    </label>
+                                  )}
+                                </div>
+                                {walletRemainderMethod === "qr_ph" && paymentMethods.qr_ph && (
+                                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                    {QRPH_PROVIDERS.map((provider) => (
+                                      <button
+                                        key={provider.id}
+                                        type="button"
+                                        onClick={() => setQrProvider(provider)}
+                                        className={cn(
+                                          "rounded-lg border px-2 py-2 text-left text-xs transition-colors",
+                                          qrProvider.id === provider.id
+                                            ? "border-brand bg-brand-soft"
+                                            : "border-border hover:bg-muted/50",
+                                        )}
+                                      >
+                                        <span className="block font-semibold">{provider.label}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {paymentMethods.qr_ph && (
@@ -502,7 +724,14 @@ function CheckoutPage() {
 
               <button
                 type="button"
-                disabled={submitting || !hasPaymentMethod || !paymentMethods[payChoice]}
+                disabled={
+                  submitting ||
+                  !hasPaymentMethod ||
+                  (payChoice === "wallet"
+                    ? !walletAvailable ||
+                      (walletCanPayPartial && !paymentMethods[walletRemainderMethod])
+                    : !paymentMethods[payChoice as keyof typeof paymentMethods])
+                }
                 onClick={placeOrder}
                 className="w-full rounded-md bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground disabled:opacity-50"
               >
@@ -514,7 +743,15 @@ function CheckoutPage() {
                       ? `Pay ${peso(total)} · Show QR`
                       : payChoice === "paypal"
                         ? "Continue to PayPal"
-                        : "Continue to PayMongo"}
+                        : payChoice === "wallet"
+                          ? walletCanPayFull
+                            ? `Pay ${peso(total)} with wallet`
+                            : walletRemainderMethod === "qr_ph"
+                              ? `Pay ${peso(walletBalance)} wallet + ${peso(walletShortfall)} via QR`
+                              : walletRemainderMethod === "bank"
+                                ? `Pay ${peso(walletBalance)} wallet + ${peso(walletShortfall)} via bank`
+                                : `Pay ${peso(walletBalance)} wallet + ${peso(walletShortfall)} via PayPal`
+                          : "Continue to PayMongo"}
               </button>
             </section>
           )}
@@ -523,12 +760,20 @@ function CheckoutPage() {
             <section className="rounded-xl border border-border bg-card p-6">
               <h2 className="text-lg font-semibold">Pay with PayPal</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Order {orderId} · {peso(summaryTotal)}
+                Order {orderId} ·{" "}
+                {peso(
+                  payChoice === "wallet" && walletCanPayPartial ? walletShortfall : summaryTotal,
+                )}
+                {payChoice === "wallet" && walletCanPayPartial && (
+                  <> · {peso(walletBalance)} from wallet</>
+                )}
               </p>
               <div className="mt-6">
                 <PayPalCheckoutPanel
                   orderId={orderId}
-                  total={summaryTotal}
+                  total={
+                    payChoice === "wallet" && walletCanPayPartial ? walletShortfall : summaryTotal
+                  }
                   onPaid={() => {
                     clear();
                     setPaid(true);
@@ -544,7 +789,10 @@ function CheckoutPage() {
             <section className="rounded-xl border border-border bg-card p-6 text-center">
               <div className="flex items-center justify-center gap-2 font-semibold">
                 <QrCode className="h-5 w-5" />
-                Scan to pay {peso(summaryTotal)}
+                Scan to pay{" "}
+                {peso(
+                  payChoice === "wallet" && walletCanPayPartial ? walletShortfall : summaryTotal,
+                )}
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{qrScanHint(qrProvider)}</p>
               {qrImageUrl ? (
