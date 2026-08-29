@@ -4,9 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart";
 import {
-  enrichProduct,
   getDefaultVariant,
-  getProduct,
   peso,
   pesoExact,
   products,
@@ -14,21 +12,10 @@ import {
   variantImage,
   type ProductWithImages,
 } from "@/lib/products";
-import { fetchProduct } from "@/lib/products.server";
+import { loadProductForPageFn } from "@/lib/products.server";
 import { getTestProductVisibleFn } from "@/lib/settings.server";
 import { isTestProductSlug } from "@/lib/products";
 import { tl } from "@/lib/tagalog";
-
-async function loadProduct(slug: string): Promise<ProductWithImages | undefined> {
-  const catalog = getProduct(slug);
-  try {
-    const fromDb = await fetchProduct({ data: slug });
-    if (fromDb) return enrichProduct(fromDb);
-  } catch {
-    // DB unavailable — use static catalog (edge deploy, missing data dir, etc.)
-  }
-  return catalog;
-}
 
 export const Route = createFileRoute("/products/$slug")({
   loader: async ({ params }) => {
@@ -36,7 +23,7 @@ export const Route = createFileRoute("/products/$slug")({
       const { visible } = await getTestProductVisibleFn();
       if (!visible) throw notFound();
     }
-    const product = await loadProduct(params.slug);
+    const product = await loadProductForPageFn({ data: params.slug });
     if (!product || product.variants.length === 0) throw notFound();
     return { product };
   },

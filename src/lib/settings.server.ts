@@ -1,13 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
-import { ensureDbReady } from "@/db/index";
-import * as schema from "@/db/schema";
-import { requireAdmin } from "@/lib/auth.server";
 import { TEST_PRODUCT_SETTING_KEY } from "@/lib/test-product";
 
 export { TEST_PRODUCT_SETTING_KEY };
 
-export async function readTestProductVisible() {
+async function readTestProductVisible() {
+  const { eq } = await import("drizzle-orm");
+  const { ensureDbReady } = await import("@/db/index");
+  const schema = await import("@/db/schema");
   const db = await ensureDbReady();
   const [row] = await db
     .select()
@@ -18,6 +17,9 @@ export async function readTestProductVisible() {
 }
 
 async function writeTestProductVisible(visible: boolean) {
+  const { eq } = await import("drizzle-orm");
+  const { ensureDbReady } = await import("@/db/index");
+  const schema = await import("@/db/schema");
   const db = await ensureDbReady();
   const value = visible ? "true" : "false";
   const [existing] = await db
@@ -47,6 +49,7 @@ export const setTestProductVisibleFn = createServerFn({ method: "POST" })
     return parsed as { token: string; visible: boolean };
   })
   .handler(async ({ data }) => {
+    const { requireAdmin } = await import("@/lib/auth.server");
     await requireAdmin(data.token);
     await writeTestProductVisible(data.visible);
     return { visible: data.visible };
