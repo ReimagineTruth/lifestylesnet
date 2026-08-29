@@ -155,7 +155,7 @@ export const catalogProducts: Product[] = [
     cateId: 12,
     name: "Nutria Plus",
     tagline: "Mixed extracts, vitamins and minerals",
-    image: "https://www.lifestyles.net/includes/imgs/bottle_NP.png",
+    image: "/bundles/nutria-1502ph.png",
     variants: [
       {
         id: "nutria-plus-1502ph",
@@ -289,7 +289,7 @@ export const catalogProducts: Product[] = [
     cateId: 3,
     name: "FibreLife",
     tagline: "Daily dietary fibre for digestive balance",
-    image: "https://www.lifestyles.net/includes/imgs/bottle_FL.png",
+    image: "/bundles/fibre-1038ph.png",
     variants: [
       {
         id: "fibrelife-1038ph",
