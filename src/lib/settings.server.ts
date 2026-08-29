@@ -9,15 +9,14 @@ import {
   serializePaymentMethodsEnabled,
   type CheckoutPayChoice,
 } from "@/lib/payment-methods";
+import { withDb } from "@/lib/server-db.server";
 import { TEST_PRODUCT_SETTING_KEY } from "@/lib/test-product";
 
 export { TEST_PRODUCT_SETTING_KEY };
 
 async function readTestProductVisible() {
+  const { db, schema } = await withDb();
   const { eq } = await import("drizzle-orm");
-  const { ensureDbReady } = await import("@/db/index");
-  const schema = await import("@/db/schema");
-  const db = await ensureDbReady();
   const [row] = await db
     .select()
     .from(schema.appSettings)
@@ -27,10 +26,8 @@ async function readTestProductVisible() {
 }
 
 async function writeTestProductVisible(visible: boolean) {
+  const { db, schema } = await withDb();
   const { eq } = await import("drizzle-orm");
-  const { ensureDbReady } = await import("@/db/index");
-  const schema = await import("@/db/schema");
-  const db = await ensureDbReady();
   const value = visible ? "true" : "false";
   const [existing] = await db
     .select()
@@ -66,10 +63,8 @@ export const setTestProductVisibleFn = createServerFn({ method: "POST" })
   });
 
 async function readPaymentMethodsAdminEnabled() {
+  const { db, schema } = await withDb();
   const { eq } = await import("drizzle-orm");
-  const { ensureDbReady } = await import("@/db/index");
-  const schema = await import("@/db/schema");
-  const db = await ensureDbReady();
   const [row] = await db
     .select()
     .from(schema.appSettings)
@@ -78,10 +73,8 @@ async function readPaymentMethodsAdminEnabled() {
 }
 
 async function writePaymentMethodsAdminEnabled(methods: Record<CheckoutPayChoice, boolean>) {
+  const { db, schema } = await withDb();
   const { eq } = await import("drizzle-orm");
-  const { ensureDbReady } = await import("@/db/index");
-  const schema = await import("@/db/schema");
-  const db = await ensureDbReady();
   const value = serializePaymentMethodsEnabled(methods);
   const [existing] = await db
     .select()

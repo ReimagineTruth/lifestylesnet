@@ -12,9 +12,20 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    cloudflare: {
+      deployConfig: true,
+      nodeCompat: true,
+    },
+  },
   vite: {
     ssr: {
-      external: ["better-sqlite3"],
+      external: ["better-sqlite3", "cloudflare:workers"],
+    },
+    build: {
+      rolldownOptions: {
+        external: ["cloudflare:workers"],
+      },
     },
     optimizeDeps: {
       exclude: ["better-sqlite3"],

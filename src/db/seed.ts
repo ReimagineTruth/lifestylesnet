@@ -1,49 +1,43 @@
 import { count, eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { catalogProducts } from "@/lib/catalog-seed-data";
 import { TEST_PRODUCT_SETTING_KEY, TEST_PRODUCT_SLUG } from "@/lib/test-product";
+import type { AppDb } from "./types";
 import * as schema from "./schema";
 
-type Db = BetterSQLite3Database<typeof schema>;
-
-function insertProduct(db: Db, product: (typeof catalogProducts)[number]) {
-  db.insert(schema.products)
-    .values({
-      slug: product.slug,
-      cateId: product.cateId,
-      name: product.name,
-      tagline: product.tagline,
-      image: product.image,
-      short: product.short,
-      description: JSON.stringify(product.description),
-      benefits: JSON.stringify(product.benefits),
-      ingredients: product.ingredients,
-      directions: product.directions,
-    })
-    .run();
+async function insertProduct(db: AppDb, product: (typeof catalogProducts)[number]) {
+  await db.insert(schema.products).values({
+    slug: product.slug,
+    cateId: product.cateId,
+    name: product.name,
+    tagline: product.tagline,
+    image: product.image,
+    short: product.short,
+    description: JSON.stringify(product.description),
+    benefits: JSON.stringify(product.benefits),
+    ingredients: product.ingredients,
+    directions: product.directions,
+  });
 
   for (const variant of product.variants) {
-    db.insert(schema.productVariants)
-      .values({
-        id: variant.id,
-        productSlug: product.slug,
-        code: variant.code,
-        label: variant.label,
-        points: variant.points,
-        price: variant.price,
-        size: variant.size,
-      })
-      .run();
+    await db.insert(schema.productVariants).values({
+      id: variant.id,
+      productSlug: product.slug,
+      code: variant.code,
+      label: variant.label,
+      points: variant.points,
+      price: variant.price,
+      size: variant.size,
+    });
   }
 }
 
-function seedCatalog(db: Db) {
+async function seedCatalog(db: AppDb) {
   for (const product of catalogProducts) {
-    insertProduct(db, product);
+    await insertProduct(db, product);
   }
 }
 
-export async function ensureTestProductCatalog(db: Db) {
+export async function ensureTestProductCatalog(db: AppDb) {
   const [existing] = await db
     .select()
     .from(schema.products)
@@ -52,10 +46,10 @@ export async function ensureTestProductCatalog(db: Db) {
 
   const testProduct = catalogProducts.find((p) => p.slug === TEST_PRODUCT_SLUG);
   if (!testProduct) return;
-  insertProduct(db, testProduct);
+  await insertProduct(db, testProduct);
 }
 
-export async function ensureDefaultSettings(db: Db) {
+export async function ensureDefaultSettings(db: AppDb) {
   const [existing] = await db
     .select()
     .from(schema.appSettings)
@@ -67,13 +61,13 @@ export async function ensureDefaultSettings(db: Db) {
   });
 }
 
-export async function seedIfEmpty(db: Db) {
+export async function seedIfEmpty(db: AppDb) {
   const [row] = await db.select({ value: count() }).from(schema.products);
   if (row && row.value > 0) {
     await ensureTestProductCatalog(db);
     await ensureDefaultSettings(db);
     return;
   }
-  seedCatalog(db);
+  await seedCatalog(db);
   await ensureDefaultSettings(db);
 }

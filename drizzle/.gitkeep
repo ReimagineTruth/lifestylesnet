@@ -1,0 +1,1 @@
+-- Cloudflare D1 migrations placeholder (schema applied at runtime in src/db/d1.server.ts).
