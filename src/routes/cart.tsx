@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Trash2 } from "lucide-react";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import { Loader2, Trash2 } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { getVariant, peso, variantCartLabel } from "@/lib/products";
+import { getVariant, peso, variantCartLabel, variantImage } from "@/lib/products";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT } from "@/lib/orders";
 
 export const Route = createFileRoute("/cart")({
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/cart")({
 });
 
 function CartPage() {
-  const { items, setQty, remove } = useCart();
+  const { items, setQty, remove, ready } = useCart();
 
   const lines = items
     .map((i) => ({ item: i, line: getVariant(i.variantId) }))
@@ -29,6 +29,14 @@ function CartPage() {
     0,
   );
   const shipping = subtotal === 0 || subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
+
+  if (!ready) {
+    return (
+      <div className="container-page flex min-h-[40vh] items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-brand" aria-label="Loading cart" />
+      </div>
+    );
+  }
 
   return (
     <div className="container-page py-14">
@@ -50,12 +58,12 @@ function CartPage() {
             {lines.map(({ item, line }) => (
               <li key={item.variantId} className="flex gap-4 p-5">
                 <img
-                  src={line!.product.image}
+                  src={variantImage(line!.product, line!.variant)}
                   alt={line!.product.name}
                   loading="lazy"
                   width={1024}
                   height={1024}
-                  className="h-24 w-24 rounded-lg object-cover"
+                  className="h-24 w-24 shrink-0 rounded-lg object-contain p-1"
                 />
                 <div className="flex-1">
                   <div className="flex justify-between gap-4">

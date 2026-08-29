@@ -1,5 +1,6 @@
 import { asc, desc, eq } from "drizzle-orm";
 import type { Product, ProductVariant } from "@/lib/catalog-data";
+import { getVariant as getCatalogVariant, migrateLegacyCartId } from "@/lib/catalog-data";
 import { ensureDbReady } from "@/db/index";
 import * as schema from "@/db/schema";
 
@@ -55,17 +56,22 @@ export async function dbGetProduct(slug: string) {
 }
 
 export async function dbGetVariant(variantId: string) {
+  const resolvedId = migrateLegacyCartId(variantId);
   const db = await ensureDbReady();
-  const [variant] = await db
-    .select()
-    .from(schema.productVariants)
-    .where(eq(schema.productVariants.id, variantId));
-  if (!variant) return undefined;
-  const product = await dbGetProduct(variant.productSlug);
-  if (!product) return undefined;
-  const v = product.variants.find((item) => item.id === variantId);
-  if (!v) return undefined;
-  return { product, variant: v };
+
+  for (const id of new Set([resolvedId, variantId])) {
+    const [variant] = await db
+      .select()
+      .from(schema.productVariants)
+      .where(eq(schema.productVariants.id, id));
+    if (!variant) continue;
+    const product = await dbGetProduct(variant.productSlug);
+    if (!product) continue;
+    const v = product.variants.find((item) => item.id === variant.id);
+    if (v) return { product, variant: v };
+  }
+
+  return getCatalogVariant(resolvedId);
 }
 
 export async function dbAllVariants() {

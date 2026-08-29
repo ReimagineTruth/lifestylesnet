@@ -13,6 +13,7 @@ export type CartItem = { variantId: string; qty: number };
 
 type CartContextValue = {
   items: CartItem[];
+  ready: boolean;
   add: (variantId: string, qty?: number) => void;
   setQty: (variantId: string, qty: number) => void;
   remove: (variantId: string) => void;
@@ -35,7 +36,7 @@ function normalizeItems(raw: unknown): CartItem[] {
               ? migrateLegacyCartId(item.slug)
               : null;
         const qty = typeof item.qty === "number" ? item.qty : 0;
-        if (id && qty > 0) return { variantId: id, qty };
+        if (id && qty > 0) return { variantId: migrateLegacyCartId(id), qty };
       }
       return null;
     })
@@ -44,6 +45,7 @@ function normalizeItems(raw: unknown): CartItem[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     try {
@@ -51,26 +53,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (raw) setItems(normalizeItems(JSON.parse(raw)));
     } catch {
       /* ignore */
+    } finally {
+      setReady(true);
     }
   }, []);
 
   useEffect(() => {
+    if (!ready) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     } catch {
       /* ignore */
     }
-  }, [items]);
+  }, [items, ready]);
 
   const add = useCallback((variantId: string, qty = 1) => {
+    const id = migrateLegacyCartId(variantId);
     setItems((prev) => {
-      const found = prev.find((i) => i.variantId === variantId);
+      const found = prev.find((i) => i.variantId === id);
       if (found) {
         return prev.map((i) =>
-          i.variantId === variantId ? { ...i, qty: i.qty + qty } : i,
+          i.variantId === id ? { ...i, qty: i.qty + qty } : i,
         );
       }
-      return [...prev, { variantId, qty }];
+      return [...prev, { variantId: id, qty }];
     });
   }, []);
 
@@ -91,13 +97,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       items,
+      ready,
       add,
       setQty,
       remove,
       clear,
       count: items.reduce((n, i) => n + i.qty, 0),
     }),
-    [items, add, setQty, remove, clear],
+    [items, ready, add, setQty, remove, clear],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

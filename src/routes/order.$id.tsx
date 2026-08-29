@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getOrderFn } from "@/lib/orders.server";
 import { confirmPaymongoPaymentFn } from "@/lib/paymongo.server";
+import { loadOrderQrPhSession, legacyQrKey } from "@/lib/qrPhPaySession";
+import { getOrderFn } from "@/lib/orders.server";
 import type { PaymentMethod } from "@/lib/orders";
+
 import { peso } from "@/lib/products";
 
 const searchSchema = z.object({
@@ -52,8 +54,13 @@ function OrderPage() {
 
   useEffect(() => {
     if (!order) return;
-    const stored = sessionStorage.getItem(`paymongo-qr-${order.id}`);
-    if (stored) setQrImage(stored);
+    const session = loadOrderQrPhSession();
+    const legacy = sessionStorage.getItem(legacyQrKey(order.id));
+    const url =
+      session?.orderId === order.id
+        ? session.qrImageUrl
+        : legacy ?? null;
+    if (url) setQrImage(url);
     setPaid(order.status === "paid");
   }, [order]);
 
@@ -130,7 +137,7 @@ function OrderPage() {
           {qrImage && (
             <div className="mt-4 flex flex-col items-center gap-3">
               <img
-                src={qrImage.startsWith("data:") ? qrImage : `data:image/png;base64,${qrImage}`}
+                src={qrImage}
                 alt="QR Ph payment code"
                 className="h-56 w-56 rounded-lg border border-border bg-white p-2"
               />

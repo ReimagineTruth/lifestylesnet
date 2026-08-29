@@ -7,7 +7,7 @@ import type { Order, OrderLine, OrderStatus } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT, newOrderId } from "@/lib/orders";
 import { dbGetVariant, newId } from "./db-mapper";
 import { isAdmin, requireAdmin } from "./auth.server";
-import { createPaymongoPayment, siteUrl } from "./paymongo.server";
+import { createPaymongoPayment, siteUrl } from "./paymongo-core.server";
 import type { BankCode, PaymongoCheckoutMethod } from "./paymongo";
 
 const createOrderInput = z.object({
@@ -33,6 +33,8 @@ const createOrderInput = z.object({
     "card",
   ]),
   bankCode: z.enum(["bpi", "ubp", "bdo", "landbank", "metrobank"]).optional(),
+  preferredProvider: z.string().optional(),
+  preferredProviderName: z.string().optional(),
   items: z.array(
     z.object({
       variantId: z.string(),
@@ -111,12 +113,20 @@ export const createOrderFn = createServerFn({ method: "POST" })
 
     if (data.paymentMethod !== "cod") {
       const returnUrl = `${siteUrl()}/order/${orderId}?payment=return`;
+      const extraMetadata: Record<string, string> = {};
+      if (data.preferredProvider) {
+        extraMetadata["preferred_provider"] = data.preferredProvider;
+        if (data.preferredProviderName) {
+          extraMetadata["preferred_provider_name"] = data.preferredProviderName;
+        }
+      }
       paymentResult = await createPaymongoPayment(
         orderId,
         total,
         data.paymentMethod as PaymongoCheckoutMethod,
         returnUrl,
         data.bankCode as BankCode | undefined,
+        extraMetadata,
       );
       paymongoIntentId = paymentResult.intentId;
     }

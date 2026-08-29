@@ -1,20 +1,20 @@
-import { Link, useNavigate, createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import { CheckCircle2, ChevronLeft, Loader2, QrCode } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { DeliveryAddressForm } from "@/components/checkout/DeliveryAddressForm";
 import { useCart } from "@/lib/cart";
-import { getVariant, peso, variantCartLabel } from "@/lib/products";
-import { saveCustomerEmail } from "@/lib/orders";
+import { loadCustomerEmail, saveCustomerEmail } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT } from "@/lib/orders";
 import { createOrderFn } from "@/lib/orders.server";
+import { confirmPaymongoPaymentFn } from "@/lib/paymongo.server";
+import { BANK_OPTIONS, type BankCode } from "@/lib/paymongo";
+import { getVariant, peso, variantCartLabel } from "@/lib/products";
+import { clearOrderQrPhSession, saveOrderQrPhSession } from "@/lib/qrPhPaySession";
+import { QRPH_PROVIDERS, qrScanHint, type QrPhProvider } from "@/lib/qrphProviders";
 import { tl } from "@/lib/tagalog";
-import {
-  BANK_OPTIONS,
-  PAYMONGO_METHODS,
-  type BankCode,
-  type PaymongoCheckoutMethod,
-} from "@/lib/paymongo";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -40,30 +40,106 @@ const schema = z.object({
   notes: z.string().trim().max(500).optional(),
 });
 
-type CheckoutMethod = "cod" | PaymongoCheckoutMethod;
+type Step = "delivery" | "payment" | "qr" | "done";
+type PayChoice = "cod" | "qr_ph" | "bank" | "card";
 
-const field =
-  "mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
+type FormState = {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  province: string;
+  postal: string;
+  notes: string;
+};
+
+const STEPS: { id: Step; label: string }[] = [
+  { id: "delivery", label: "Delivery" },
+  { id: "payment", label: "Payment" },
+  { id: "qr", label: "Pay" },
+  { id: "done", label: "Done" },
+];
 
 function CheckoutPage() {
-  const { items, clear } = useCart();
-  const navigate = useNavigate();
+  const { items, clear, ready } = useCart();
   const createOrder = useServerFn(createOrderFn);
+  const confirmPayment = useServerFn(confirmPaymongoPaymentFn);
+
+  const [step, setStep] = useState<Step>("delivery");
+  const [form, setForm] = useState<FormState>({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    province: "",
+    postal: "",
+    notes: "",
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [method, setMethod] = useState<CheckoutMethod>("cod");
+  const [payChoice, setPayChoice] = useState<PayChoice>("qr_ph");
+  const [qrProvider, setQrProvider] = useState<QrPhProvider>(QRPH_PROVIDERS[0]!);
   const [bankCode, setBankCode] = useState<BankCode>("bpi");
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
+  const [paid, setPaid] = useState(false);
+
+  useEffect(() => {
+    const savedEmail = loadCustomerEmail();
+    if (savedEmail) {
+      setForm((prev) => (prev.email ? prev : { ...prev, email: savedEmail }));
+    }
+  }, []);
 
   const lines = items
     .map((i) => ({ item: i, line: getVariant(i.variantId) }))
-    .filter((l) => l.line);
+    .filter(
+      (l): l is { item: (typeof items)[number]; line: NonNullable<ReturnType<typeof getVariant>> } =>
+        Boolean(l.line),
+    );
   const subtotal = lines.reduce((sum, l) => sum + l.line!.variant.price * l.item.qty, 0);
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
   const total = subtotal + shipping;
 
-  const selectedPaymongo = PAYMONGO_METHODS.find((m) => m.id === method);
+  const patchForm = useCallback((patch: Partial<FormState>) => {
+    setForm((prev) => ({ ...prev, ...patch }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(patch)) delete next[key];
+      return next;
+    });
+  }, []);
 
-  if (lines.length === 0) {
+  useEffect(() => {
+    if (step !== "qr" || !orderId || paid) return;
+    const poll = () => {
+      void confirmPayment({ data: { orderId } })
+        .then((result) => {
+          if (result.paid) {
+            setPaid(true);
+            clearOrderQrPhSession();
+            setStep("done");
+            toast.success("Payment confirmed! Salamat po.");
+          }
+        })
+        .catch(() => {});
+    };
+    poll();
+    const interval = setInterval(poll, 4000);
+    return () => clearInterval(interval);
+  }, [step, orderId, paid, confirmPayment]);
+
+  if (!ready) {
+    return (
+      <div className="container-page flex min-h-[40vh] items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-brand" aria-label="Loading cart" />
+      </div>
+    );
+  }
+
+  if (lines.length === 0 && step !== "done") {
     return (
       <div className="container-page py-24 text-center">
         <h1 className="text-3xl font-semibold">Your cart is empty</h1>
@@ -77,25 +153,33 @@ function CheckoutPage() {
     );
   }
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (submitting) return;
-    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
-    const parsed = schema.safeParse(data);
+  function validateDelivery() {
+    const parsed = schema.safeParse(form);
     if (!parsed.success) {
       const next: Record<string, string> = {};
       for (const issue of parsed.error.issues) next[String(issue.path[0])] = issue.message;
       setErrors(next);
       toast.error(tl.toast.validationError);
+      return false;
+    }
+    setErrors({});
+    return true;
+  }
+
+  function placeOrder() {
+    if (submitting) return;
+    if (!validateDelivery()) {
+      setStep("delivery");
       return;
     }
-    if (method === "bank" && !bankCode) {
+    if (payChoice === "bank" && !bankCode) {
       toast.error("Pumili ng bangko para sa online banking.");
       return;
     }
-    setErrors({});
-    const v = parsed.data;
+
     setSubmitting(true);
+    const v = schema.parse(form);
+
     void createOrder({
       data: {
         customer: {
@@ -106,19 +190,36 @@ function CheckoutPage() {
           city: v.city,
           province: v.province,
           postal: v.postal,
-          notes: v.notes,
+          ...(v.notes ? { notes: v.notes } : {}),
         },
-        paymentMethod: method,
-        bankCode: method === "bank" ? bankCode : undefined,
-        items: lines.map(({ item }) => ({ variantId: item.variantId, qty: item.qty })),
+        paymentMethod:
+          payChoice === "cod"
+            ? "cod"
+            : payChoice === "bank"
+              ? "bank"
+              : payChoice === "card"
+                ? "card"
+                : "qr_ph",
+        ...(payChoice === "bank" ? { bankCode } : {}),
+        ...(payChoice === "qr_ph"
+          ? {
+              preferredProvider: qrProvider.id,
+              preferredProviderName: qrProvider.label,
+            }
+          : {}),
+        items: lines.map(({ item, line }) => ({
+          variantId: line.variant.id,
+          qty: item.qty,
+        })),
       },
     })
       .then((result) => {
         saveCustomerEmail(v.email);
         clear();
-        toast.success(tl.toast.orderPlaced(result.order.id));
+        setOrderId(result.order.id);
 
         const { order, payment } = result;
+
         if (payment?.redirectUrl) {
           window.location.href = payment.redirectUrl;
           return;
@@ -127,14 +228,27 @@ function CheckoutPage() {
           window.location.href = payment.checkoutUrl;
           return;
         }
+
         if (payment?.qrImageUrl) {
-          sessionStorage.setItem(`paymongo-qr-${order.id}`, payment.qrImageUrl);
+          const hint = qrScanHint(qrProvider);
+          saveOrderQrPhSession({
+            orderId: order.id,
+            intentId: payment.intentId,
+            qrImageUrl: payment.qrImageUrl,
+            total: order.total,
+            scanHint: hint,
+            createdAt: Date.now(),
+            ...(qrProvider.id !== "qr_ph" ? { providerName: qrProvider.label } : {}),
+          });
+          setQrImageUrl(payment.qrImageUrl);
+          setStep("qr");
+          toast.success("Order created — scan the QR to pay.");
+          return;
         }
-        navigate({
-          to: "/order/$id",
-          params: { id: order.id },
-          search: payment ? { payment: "pending" } : {},
-        });
+
+        toast.success(tl.toast.orderPlaced(order.id));
+        setPaid(true);
+        setStep("done");
       })
       .catch((err: Error) => {
         toast.error(err.message || "Could not place order. Please try again.");
@@ -142,160 +256,262 @@ function CheckoutPage() {
       .finally(() => setSubmitting(false));
   }
 
+  const stepIndex = STEPS.findIndex((s) => s.id === step);
+
   return (
-    <div className="container-page py-14">
-      <h1 className="text-4xl font-semibold">Checkout</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Secure payments powered by PayMongo — QR Ph, e-wallets, online banking, and cards.
+    <div className="container-page py-10">
+      <h1 className="text-3xl font-semibold">Checkout</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Delivery → payment → scan QR (Shopee-style)
       </p>
 
-      <form onSubmit={onSubmit} className="mt-10 grid gap-10 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-10">
-          <section className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold">Delivery details</h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Field label="Full name" name="name" error={errors["name"]} />
-              <Field label="Email" name="email" type="email" error={errors["email"]} />
-              <Field label="Mobile number" name="phone" error={errors["phone"]} />
-              <Field label="Postal code" name="postal" error={errors["postal"]} />
-              <div className="sm:col-span-2">
-                <Field label="Street address" name="address" error={errors["address"]} />
-              </div>
-              <Field label="City / Municipality" name="city" error={errors["city"]} />
-              <Field label="Province" name="province" error={errors["province"]} />
-              <div className="sm:col-span-2">
-                <label className="text-sm font-medium">
-                  Delivery notes (optional)
-                  <textarea name="notes" rows={3} className={field} />
-                </label>
-              </div>
-            </div>
-          </section>
+      <ol className="mt-8 flex gap-2">
+        {STEPS.map((s, i) => (
+          <li
+            key={s.id}
+            className={`flex-1 rounded-full py-2 text-center text-xs font-semibold sm:text-sm ${
+              i <= stepIndex ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {i + 1}. {s.label}
+          </li>
+        ))}
+      </ol>
 
-          <section className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold">Payment method</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Pay online via PayMongo or choose cash on delivery.
-            </p>
-            <div className="mt-5 space-y-3">
-              <label
-                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                  method === "cod" ? "border-brand bg-brand-soft" : "border-border"
-                }`}
+      <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_320px]">
+        <div className="min-w-0">
+          {step === "delivery" && (
+            <section className="rounded-xl border border-border bg-card p-6">
+              <h2 className="text-lg font-semibold">Delivery address</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Search on the map, then confirm your details.
+              </p>
+              <div className="mt-6">
+                <DeliveryAddressForm values={form} errors={errors} onChange={patchForm} />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (validateDelivery()) setStep("payment");
+                }}
+                className="mt-8 w-full rounded-md bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground"
               >
-                <input
-                  type="radio"
-                  name="paymentMethodRadio"
-                  checked={method === "cod"}
-                  onChange={() => setMethod("cod")}
-                  className="mt-1 accent-brand"
-                />
-                <span>
-                  <span className="block text-sm font-semibold">Cash on delivery</span>
-                  <span className="block text-sm text-muted-foreground">
-                    Pay the courier upon arrival.
-                  </span>
-                </span>
-              </label>
+                Continue to payment
+              </button>
+            </section>
+          )}
 
-              {PAYMONGO_METHODS.map((opt) => (
+          {step === "payment" && (
+            <section className="space-y-6">
+              <div className="rounded-xl border border-border bg-card p-6">
+                <button
+                  type="button"
+                  onClick={() => setStep("delivery")}
+                  className="mb-4 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Edit delivery address
+                </button>
+                <h2 className="text-lg font-semibold">Payment method</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Pick the app you&apos;ll use to scan. All e-wallet tiles use one PayMongo QR Ph
+                  code.
+                </p>
+
                 <label
-                  key={opt.id}
-                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                    method === opt.id ? "border-brand bg-brand-soft" : "border-border"
+                  className={`mt-5 flex cursor-pointer items-start gap-3 rounded-lg border p-4 ${
+                    payChoice === "cod" ? "border-brand bg-brand-soft" : "border-border"
                   }`}
                 >
                   <input
                     type="radio"
-                    name="paymentMethodRadio"
-                    checked={method === opt.id}
-                    onChange={() => setMethod(opt.id)}
+                    checked={payChoice === "cod"}
+                    onChange={() => setPayChoice("cod")}
                     className="mt-1 accent-brand"
                   />
                   <span>
-                    <span className="block text-sm font-semibold">{opt.title}</span>
-                    <span className="block text-sm text-muted-foreground">{opt.desc}</span>
+                    <span className="block text-sm font-semibold">Cash on delivery</span>
+                    <span className="text-sm text-muted-foreground">Pay when your order arrives.</span>
                   </span>
                 </label>
-              ))}
-            </div>
 
-            {selectedPaymongo?.needsBank && method === "bank" && (
-              <div className="mt-5">
-                <label className="text-sm font-medium">
-                  Select bank
-                  <select
-                    value={bankCode}
-                    onChange={(e) => setBankCode(e.target.value as BankCode)}
-                    className={field}
+                <p className="mt-6 text-sm font-semibold">QR Ph & e-wallets</p>
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {QRPH_PROVIDERS.map((provider) => (
+                    <button
+                      key={provider.id}
+                      type="button"
+                      onClick={() => {
+                        setPayChoice("qr_ph");
+                        setQrProvider(provider);
+                      }}
+                      className={`rounded-lg border px-3 py-4 text-left text-sm transition-colors ${
+                        payChoice === "qr_ph" && qrProvider.id === provider.id
+                          ? "border-brand bg-brand-soft"
+                          : "border-border hover:bg-muted/50"
+                      }`}
+                    >
+                      <span className="block font-semibold">{provider.label}</span>
+                      {provider.hint && (
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {provider.hint}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <p className="mt-6 text-sm font-semibold">Other options</p>
+                <div className="mt-3 space-y-2">
+                  <label
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${
+                      payChoice === "bank" ? "border-brand bg-brand-soft" : "border-border"
+                    }`}
                   >
-                    {BANK_OPTIONS.map((b) => (
-                      <option key={b.code} value={b.code}>
-                        {b.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <input
+                      type="radio"
+                      checked={payChoice === "bank"}
+                      onChange={() => setPayChoice("bank")}
+                      className="accent-brand"
+                    />
+                    <span className="text-sm font-semibold">Online banking (redirect)</span>
+                  </label>
+                  {payChoice === "bank" && (
+                    <select
+                      value={bankCode}
+                      onChange={(e) => setBankCode(e.target.value as BankCode)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      {BANK_OPTIONS.map((b) => (
+                        <option key={b.code} value={b.code}>
+                          {b.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <label
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${
+                      payChoice === "card" ? "border-brand bg-brand-soft" : "border-border"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      checked={payChoice === "card"}
+                      onChange={() => setPayChoice("card")}
+                      className="accent-brand"
+                    />
+                    <span className="text-sm font-semibold">Credit / debit card</span>
+                  </label>
+                </div>
               </div>
-            )}
-          </section>
+
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={placeOrder}
+                className="w-full rounded-md bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground disabled:opacity-50"
+              >
+                {submitting
+                  ? "Processing…"
+                  : payChoice === "cod"
+                    ? "Place order"
+                    : payChoice === "qr_ph"
+                      ? `Pay ${peso(total)} · Show QR`
+                      : "Continue to PayMongo"}
+              </button>
+            </section>
+          )}
+
+          {step === "qr" && qrImageUrl && orderId && (
+            <section className="rounded-xl border border-border bg-card p-6 text-center">
+              <div className="flex items-center justify-center gap-2 font-semibold">
+                <QrCode className="h-5 w-5" />
+                Scan to pay {peso(total)}
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">{qrScanHint(qrProvider)}</p>
+              <img
+                src={qrImageUrl}
+                alt="QR Ph payment code"
+                className="mx-auto mt-6 h-64 w-64 rounded-lg border border-border bg-white p-2"
+              />
+              <p className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Waiting for payment · Order {orderId}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">QR expires in ~30 minutes</p>
+            </section>
+          )}
+
+          {step === "done" && orderId && (
+            <section className="rounded-xl border border-green-200 bg-green-50 p-8 text-center">
+              <CheckCircle2 className="mx-auto h-12 w-12 text-brand" />
+              <h2 className="mt-4 text-2xl font-semibold">Order complete</h2>
+              <p className="mt-2 text-muted-foreground">
+                Order <span className="font-semibold text-foreground">{orderId}</span>
+                {paid ? " — payment confirmed." : " — thank you!"}
+              </p>
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <Link
+                  to="/order/$id"
+                  params={{ id: orderId }}
+                  className="rounded-md bg-brand px-6 py-2.5 text-sm font-semibold text-brand-foreground"
+                >
+                  View order
+                </Link>
+                <Link
+                  to="/products"
+                  className="rounded-md border border-border px-6 py-2.5 text-sm font-semibold"
+                >
+                  Continue shopping
+                </Link>
+              </div>
+            </section>
+          )}
         </div>
 
-        <aside className="h-fit rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold">Order summary</h2>
-          <ul className="mt-5 space-y-3 text-sm">
-            {lines.map(({ item, line }) => (
-              <li key={item.variantId} className="flex justify-between gap-3">
-                <span className="text-muted-foreground">
-                  {variantCartLabel(line!.product, line!.variant)} × {item.qty}
-                </span>
-                <span>{peso(line!.variant.price * item.qty)}</span>
-              </li>
-            ))}
-          </ul>
-          <dl className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
-              <dd>{peso(subtotal)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Shipping</dt>
-              <dd>{shipping === 0 ? "Free" : peso(shipping)}</dd>
-            </div>
-            <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
-              <dt>Total</dt>
-              <dd>{peso(total)}</dd>
-            </div>
-          </dl>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-6 w-full rounded-md bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting ? "Processing…" : method === "cod" ? "Place order" : "Pay with PayMongo"}
-          </button>
-        </aside>
-      </form>
+        <OrderSummary lines={lines} subtotal={subtotal} shipping={shipping} total={total} />
+      </div>
     </div>
   );
 }
 
-function Field({
-  label,
-  name,
-  type = "text",
-  error,
+function OrderSummary({
+  lines,
+  subtotal,
+  shipping,
+  total,
 }: {
-  label: string;
-  name: string;
-  type?: string;
-  error?: string | undefined;
+  lines: { item: { variantId: string; qty: number }; line: NonNullable<ReturnType<typeof getVariant>> }[];
+  subtotal: number;
+  shipping: number;
+  total: number;
 }) {
   return (
-    <label className="block text-sm font-medium">
-      {label}
-      <input name={name} type={type} className={field} />
-      {error && <span className="mt-1 block text-xs font-normal text-destructive">{error}</span>}
-    </label>
+    <aside className="h-fit rounded-xl border border-border bg-card p-6">
+      <h2 className="text-lg font-semibold">Order summary</h2>
+      <ul className="mt-5 space-y-3 text-sm">
+        {lines.map(({ item, line }) => (
+          <li key={item.variantId} className="flex justify-between gap-3">
+            <span className="text-muted-foreground">
+              {variantCartLabel(line!.product, line!.variant)} × {item.qty}
+            </span>
+            <span>{peso(line!.variant.price * item.qty)}</span>
+          </li>
+        ))}
+      </ul>
+      <dl className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
+        <div className="flex justify-between">
+          <dt className="text-muted-foreground">Subtotal</dt>
+          <dd>{peso(subtotal)}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-muted-foreground">Shipping</dt>
+          <dd>{shipping === 0 ? "Free" : peso(shipping)}</dd>
+        </div>
+        <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
+          <dt>Total</dt>
+          <dd>{peso(total)}</dd>
+        </div>
+      </dl>
+    </aside>
   );
 }

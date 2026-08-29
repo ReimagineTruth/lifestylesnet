@@ -79,6 +79,28 @@ function Index() {
         </div>
       </section>
 
+      {/* Factory tour */}
+      <section className="border-t border-border bg-muted/20 py-16 md:py-24">
+        <div className="container-page">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Behind the product
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold">Our factory</h2>
+          <p className="mt-3 max-w-2xl text-muted-foreground">
+            See how Lifestyles formulations are made — quality-controlled production you can trust.
+          </p>
+          <div className="relative mt-8 w-full overflow-hidden rounded-2xl border border-border bg-black pb-[56.25%] shadow-sm">
+            <iframe
+              allow="fullscreen; autoplay"
+              allowFullScreen
+              src="https://streamable.com/e/wq7rqu?autoplay=1&nocontrols=1"
+              title="Lifestyles factory tour"
+              className="absolute left-0 top-0 h-full w-full border-0"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Featured products */}
       <section className="border-t border-border bg-muted/20 py-16 md:py-24">
         <div className="container-page">

@@ -5,6 +5,8 @@ export type ProductVariant = {
   points: number;
   price: number;
   size: string;
+  /** Resolved to a bundled product photo in catalog-data.ts */
+  imageKey?: string;
 };
 
 export type Product = {
@@ -27,7 +29,7 @@ export const catalogProducts: Product[] = [
     cateId: 1,
     name: "Intra",
     tagline: "The original 23-herb botanical drink",
-    image: "/src/assets/bottle_INTRA.png",
+    image: "https://www.lifestyles.net/includes/imgs/bottle_INTRA.png",
     variants: [
       {
         id: "intra-1201ph",
@@ -36,6 +38,7 @@ export const catalogProducts: Product[] = [
         points: 35,
         price: 1807,
         size: "950 ml bottle",
+        imageKey: "intra-1201ph",
       },
       {
         id: "intra-1201",
@@ -44,6 +47,7 @@ export const catalogProducts: Product[] = [
         points: 315,
         price: 14484,
         size: "9 × 950 ml bottles",
+        imageKey: "intra-1201",
       },
       {
         id: "intra-1231",
@@ -52,6 +56,7 @@ export const catalogProducts: Product[] = [
         points: 105,
         price: 4821,
         size: "3 × 950 ml liquid bottles",
+        imageKey: "intra-1231",
       },
       {
         id: "intra-1232",
@@ -60,6 +65,7 @@ export const catalogProducts: Product[] = [
         points: 105,
         price: 4821,
         size: "3 × 64 capsule bottles",
+        imageKey: "intra-1232",
       },
       {
         id: "intra-1234",
@@ -68,6 +74,7 @@ export const catalogProducts: Product[] = [
         points: 105,
         price: 4821,
         size: "2 capsule + 1 liquid bottle",
+        imageKey: "intra-1234",
       },
     ],
     short:
@@ -94,7 +101,7 @@ export const catalogProducts: Product[] = [
     cateId: 12,
     name: "Nutria Plus",
     tagline: "Mixed extracts, vitamins and minerals",
-    image: "/src/assets/nutriaplus.png",
+    image: "https://www.lifestyles.net/includes/imgs/bottle_NP.png",
     variants: [
       {
         id: "nutria-plus-1502ph",
@@ -103,6 +110,7 @@ export const catalogProducts: Product[] = [
         points: 30,
         price: 1339,
         size: "60 capsules",
+        imageKey: "nutria-1502ph",
       },
       {
         id: "nutria-plus-1502",
@@ -111,6 +119,7 @@ export const catalogProducts: Product[] = [
         points: 120,
         price: 5357,
         size: "4 × 60 capsules",
+        imageKey: "nutria-1502",
       },
     ],
     short:
@@ -134,15 +143,16 @@ export const catalogProducts: Product[] = [
     cateId: 14,
     name: "CardioLife",
     tagline: "Heart and circulation support with K2",
-    image: "/src/assets/cardiolife.png",
+    image: "https://www.lifestyles.net/includes/imgs/bottle_CL.png",
     variants: [
       {
         id: "cardiolife-1540ph",
         code: "1540PH",
         label: "1 bottle",
         points: 35,
-        price: 1807,
+        price: 1607,
         size: "60 capsules",
+        imageKey: "cardio-1540ph",
       },
       {
         id: "cardiolife-1540",
@@ -151,6 +161,7 @@ export const catalogProducts: Product[] = [
         points: 140,
         price: 6429,
         size: "4 × 60 capsules",
+        imageKey: "cardio-1540",
       },
     ],
     short:
@@ -174,7 +185,7 @@ export const catalogProducts: Product[] = [
     cateId: 3,
     name: "FibreLife",
     tagline: "Daily dietary fibre for digestive balance",
-    image: "/src/assets/fibrelife.png",
+    image: "https://www.lifestyles.net/includes/imgs/bottle_FL.png",
     variants: [
       {
         id: "fibrelife-1038ph",
@@ -183,6 +194,7 @@ export const catalogProducts: Product[] = [
         points: 30,
         price: 1339,
         size: "60 capsules",
+        imageKey: "fibre-1038ph",
       },
       {
         id: "fibrelife-1038",
@@ -191,6 +203,7 @@ export const catalogProducts: Product[] = [
         points: 120,
         price: 5357,
         size: "4 × 60 capsules",
+        imageKey: "fibre-1038",
       },
     ],
     short:
@@ -213,15 +226,16 @@ export const catalogProducts: Product[] = [
     cateId: 6,
     name: "Better Together Pack",
     tagline: "Complete wellness bundle — save when you buy together",
-    image: "/src/assets/bottle_INTRA.png",
+    image: "https://pbc.lifestyles.net/includes/shop/PH/photo/6999.jpg",
     variants: [
       {
-        id: "btp-8999",
-        code: "8999",
+        id: "btp-6999",
+        code: "6999",
         label: "Liquid pack",
         points: 165,
         price: 7500,
         size: "2 Intra Liquid + NutriaPlus + CardioLife + FibreLife",
+        imageKey: "btp-6999",
       },
       {
         id: "btp-6999c",
@@ -230,6 +244,7 @@ export const catalogProducts: Product[] = [
         points: 165,
         price: 7500,
         size: "2 Intra Capsules + NutriaPlus + CardioLife + FibreLife",
+        imageKey: "btp-6999c",
       },
     ],
     short:
