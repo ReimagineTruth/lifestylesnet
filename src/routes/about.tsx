@@ -24,12 +24,10 @@ export const Route = createFileRoute("/about")({
 
 function AboutPage() {
   return (
-    <div className="container-page py-14">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-        About us
-      </p>
-      <h1 className="mt-2 text-4xl font-semibold">About Lifestyles Philippines</h1>
-      <div className="mt-8 max-w-3xl space-y-4 text-muted-foreground">
+    <div className="container-page py-16 md:py-20">
+      <p className="eyebrow">About us</p>
+      <h1 className="mt-3">About Lifestyles Philippines</h1>
+      <div className="body-lg mt-10 max-w-3xl space-y-5 text-muted-foreground">
         <p>
           Lifestyles is a global wellness brand committed to helping people live better every day.
           Since 1989, we have developed botanical-based products designed to support the body's

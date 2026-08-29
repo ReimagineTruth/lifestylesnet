@@ -25,16 +25,14 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   return (
-    <div className="container-page py-14">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-        Contact
-      </p>
-      <h1 className="mt-2 text-4xl font-semibold">Contact us</h1>
-      <div className="mt-8 grid gap-8 md:grid-cols-2">
-        <div className="space-y-6">
+    <div className="container-page py-16 md:py-20">
+      <p className="eyebrow">Contact</p>
+      <h1 className="mt-3">Contact us</h1>
+      <div className="mt-10 grid gap-10 md:grid-cols-2">
+        <div className="space-y-8">
           <div>
-            <h2 className="text-lg font-semibold">Philippines office</h2>
-            <p className="mt-2 text-muted-foreground">
+            <h2 className="text-xl font-semibold">Philippines office</h2>
+            <p className="body-lg mt-3 text-muted-foreground">
               Lifestyles Philippines
               <br />
               Makati City, Metro Manila
@@ -43,17 +41,17 @@ function ContactPage() {
             </p>
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Customer support</h2>
-            <p className="mt-2 text-muted-foreground">
+            <h2 className="text-xl font-semibold">Customer support</h2>
+            <p className="body-lg mt-3 text-muted-foreground">
               Monday – Friday, 9:00 AM – 6:00 PM PHT
               <br />
               support@lifestyles.ph
             </p>
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold">Magpadala ng mensahe</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <div className="rounded-xl border border-border bg-card p-7">
+          <h2 className="text-xl font-semibold">Magpadala ng mensahe</h2>
+          <p className="body-lg mt-3 text-muted-foreground">
             Magtanong tungkol sa produkto, order, o delivery. Realtime ang sagot — tingnan ang
             widget sa kanang ibaba ng page.
           </p>

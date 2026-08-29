@@ -1,5 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { ExternalLink } from "lucide-react";
 import { LegalPageLayout, LegalSection } from "@/components/site/LegalPageLayout";
+import { LIFESTYLES_GLOBAL_PRIVACY_PDF } from "@/lib/legal-urls";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -28,6 +30,24 @@ function PrivacyPage() {
         <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong> and its implementing
         rules.
       </p>
+
+      <div className="rounded-xl border border-border bg-muted/30 p-6">
+        <p className="font-semibold text-foreground">Lifestyles global privacy statement</p>
+        <p className="mt-2">
+          This page covers how Lifestyles Philippines handles data on this website. For the official
+          Lifestyles International Holdings Corporation Online Privacy Statement, download the
+          global policy:
+        </p>
+        <a
+          href={LIFESTYLES_GLOBAL_PRIVACY_PDF}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex items-center gap-2 font-semibold text-brand hover:underline"
+        >
+          Lifestyles Online Privacy Policy (PDF)
+          <ExternalLink className="h-4 w-4" aria-hidden="true" />
+        </a>
+      </div>
 
       <LegalSection id="controller" title="1. Who is responsible">
         <p>

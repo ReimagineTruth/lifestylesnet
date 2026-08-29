@@ -24,12 +24,10 @@ export const Route = createFileRoute("/opportunity")({
 
 function OpportunityPage() {
   return (
-    <div className="container-page py-14">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-        Opportunity
-      </p>
-      <h1 className="mt-2 text-4xl font-semibold">Build a wellness business</h1>
-      <p className="mt-4 max-w-2xl text-muted-foreground">
+    <div className="container-page py-16 md:py-20">
+      <p className="eyebrow">Opportunity</p>
+      <h1 className="mt-3">Build a wellness business</h1>
+      <p className="lead mt-4 max-w-2xl">
         Become an independent Lifestyles distributor and share products that have supported healthy
         routines for over three decades.
       </p>
@@ -51,22 +49,22 @@ function OpportunityPage() {
             description: "Build your business at your own pace, part-time or full-time.",
           },
         ].map((item) => (
-          <div key={item.title} className="rounded-xl border border-border bg-card p-6">
-            <h3 className="text-lg font-semibold">{item.title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
+          <div key={item.title} className="rounded-xl border border-border bg-card p-7">
+            <h3 className="text-xl font-semibold">{item.title}</h3>
+            <p className="mt-3 text-base leading-relaxed text-muted-foreground">{item.description}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-10 rounded-xl border border-border bg-card p-6">
-        <h2 className="text-lg font-semibold">Get started</h2>
-        <p className="mt-2 text-muted-foreground">
+      <div className="mt-12 rounded-xl border border-border bg-card p-7">
+        <h2 className="text-xl font-semibold">Get started</h2>
+        <p className="body-lg mt-3 text-muted-foreground">
           Interested in learning more? Reach out through our contact page and a team member will
           follow up with next steps.
         </p>
         <Link
           to="/contact"
-          className="mt-4 inline-flex rounded-md bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90"
+          className="mt-6 inline-flex rounded-md bg-brand px-7 py-3.5 text-base font-semibold text-brand-foreground transition-opacity hover:opacity-90"
         >
           Contact us
         </Link>

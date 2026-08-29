@@ -15,7 +15,16 @@ import {
 import { loadProductForPageFn } from "@/lib/products.server";
 import { getTestProductVisibleFn } from "@/lib/settings.server";
 import { isTestProductSlug } from "@/lib/products";
+import { LiveCustomerReviews } from "@/components/site/LiveCustomerReviews";
 import { tl } from "@/lib/tagalog";
+
+const FAQ_TAGALOG_SECTION: Partial<Record<string, string>> = {
+  intra: "intra",
+  "nutria-plus": "nutria-plus",
+  cardiolife: "cardiolife",
+  fibrelife: "fibrelife",
+  "better-together-pack": "lifestyles",
+};
 
 export const Route = createFileRoute("/products/$slug")({
   loader: async ({ params }) => {
@@ -66,8 +75,8 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
   const related = products.filter((p) => p.slug !== product.slug);
 
   return (
-    <div className="container-page py-6 sm:py-8">
-      <nav className="text-sm text-muted-foreground">
+    <div className="container-page py-8 sm:py-12">
+      <nav className="text-base text-muted-foreground">
         <Link to="/products" className="hover:text-foreground">
           Products
         </Link>
@@ -91,20 +100,20 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
         </div>
 
         <div>
-          <h1 className="text-3xl font-semibold sm:text-4xl">{product.name}</h1>
-          <p className="mt-2 text-lg text-muted-foreground">{product.tagline}</p>
-          <p className="mt-6 text-3xl font-semibold">{peso(selected.price)}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1>{product.name}</h1>
+          <p className="lead mt-3">{product.tagline}</p>
+          <p className="mt-8 text-4xl font-semibold tracking-tight">{peso(selected.price)}</p>
+          <p className="mt-2 text-base text-muted-foreground">
             {selected.size} · Code {selected.code} · {selected.points} pts · In stock
           </p>
 
-          <div className="mt-6">
-            <p className="text-sm font-semibold">Choose bundle</p>
-            <div className="mt-3 space-y-2">
+          <div className="mt-8">
+            <p className="text-base font-semibold">Choose bundle</p>
+            <div className="mt-4 space-y-2">
               {product.variants.map((variant) => (
                 <label
                   key={variant.id}
-                  className={`flex cursor-pointer items-center justify-between gap-4 rounded-lg border px-4 py-3 text-sm transition-colors ${
+                  className={`flex cursor-pointer items-center justify-between gap-4 rounded-lg border px-4 py-3.5 text-base transition-colors ${
                     selected.id === variant.id
                       ? "border-brand bg-brand-soft"
                       : "border-border hover:bg-muted/50"
@@ -129,7 +138,7 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
                     ) : null}
                     <span>
                       <span className="font-medium">{variant.label}</span>
-                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                      <span className="mt-0.5 block text-sm text-muted-foreground">
                         {variant.size}
                       </span>
                     </span>
@@ -150,7 +159,7 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
               >
                 −
               </button>
-              <span className="w-10 text-center text-sm font-medium">{qty}</span>
+              <span className="w-10 text-center text-base font-medium">{qty}</span>
               <button
                 type="button"
                 aria-label="Increase quantity"
@@ -166,19 +175,19 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
                 add(selected.id, qty);
                 toast.success(tl.toast.addedToCart(variantCartLabel(product, selected)));
               }}
-              className="inline-flex items-center gap-2 rounded-md bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-md bg-brand px-7 py-3.5 text-base font-semibold text-brand-foreground transition-opacity hover:opacity-90"
             >
               <ShoppingBag className="h-4 w-4" /> Add to cart
             </button>
             <Link
               to="/cart"
-              className="rounded-md border border-border px-6 py-3 text-sm font-semibold transition-colors hover:bg-accent"
+              className="rounded-md border border-border px-7 py-3.5 text-base font-semibold transition-colors hover:bg-accent"
             >
               View cart
             </Link>
           </div>
 
-          <div className="mt-10 space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <div className="body-lg mt-10 space-y-4 text-muted-foreground">
             {product.description.map((para) => (
               <p key={para}>{para}</p>
             ))}
@@ -186,14 +195,14 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
 
           <ul className="mt-8 space-y-3">
             {product.benefits.map((b) => (
-              <li key={b} className="flex items-start gap-3 text-sm">
+              <li key={b} className="flex items-start gap-3 text-base">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
                 <span>{b}</span>
               </li>
             ))}
           </ul>
 
-          <dl className="mt-10 space-y-6 border-t border-border pt-8 text-sm">
+          <dl className="body-lg mt-10 space-y-6 border-t border-border pt-10">
             <div>
               <dt className="font-semibold">Ingredients</dt>
               <dd className="mt-1 text-muted-foreground">{product.ingredients}</dd>
@@ -205,29 +214,39 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
           </dl>
 
           {product.faqs && product.faqs.length > 0 && (
-            <section className="mt-10 border-t border-border pt-8">
-              <h2 className="text-lg font-semibold">Frequently asked questions</h2>
-              <dl className="mt-6 space-y-6">
+            <section className="mt-12 border-t border-border pt-10">
+              <h2>Frequently asked questions</h2>
+              <dl className="mt-8 space-y-8">
                 {product.faqs.map((faq) => (
                   <div key={faq.q}>
-                    <dt className="text-sm font-semibold">{faq.q}</dt>
-                    <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">{faq.a}</dd>
+                    <dt className="text-base font-semibold">{faq.q}</dt>
+                    <dd className="body-lg mt-3 text-muted-foreground">{faq.a}</dd>
                   </div>
                 ))}
               </dl>
+              {FAQ_TAGALOG_SECTION[product.slug] && (
+                <p className="mt-8 text-base">
+                  <a
+                    href={`/faq#${FAQ_TAGALOG_SECTION[product.slug]}`}
+                    className="font-medium text-brand hover:underline"
+                  >
+                    Basahin ang FAQ sa Tagalog →
+                  </a>
+                </p>
+              )}
             </section>
           )}
 
           {product.resources && product.resources.length > 0 && (
-            <section className="mt-8 space-y-3">
-              <h2 className="text-sm font-semibold">Resources</h2>
+            <section className="mt-10 space-y-4">
+              <h2 className="text-lg font-semibold">Resources</h2>
               <ul className="space-y-2">
                 {product.resources.map((resource) => (
                   <li key={resource.href}>
                     {resource.href.startsWith("/") ? (
                       <Link
                         to={resource.href as "/fda"}
-                        className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
+                        className="inline-flex items-center gap-2 text-base font-medium text-brand hover:underline"
                       >
                         <ExternalLink className="h-4 w-4" aria-hidden="true" />
                         {resource.label}
@@ -237,7 +256,7 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
                         href={resource.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
+                        className="inline-flex items-center gap-2 text-base font-medium text-brand hover:underline"
                       >
                         {resource.kind === "video" ? (
                           <Youtube className="h-4 w-4" />
@@ -253,19 +272,25 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
             </section>
           )}
 
-          <p className="mt-8 text-xs text-muted-foreground">No approved therapeutic claims.</p>
+          <p className="mt-8 text-sm text-muted-foreground">No approved therapeutic claims.</p>
         </div>
       </div>
 
+      {!isTestProductSlug(product.slug) && (
+        <div className="mt-16 border-t border-border pt-16">
+          <LiveCustomerReviews productName={product.name} />
+        </div>
+      )}
+
       <section className="mt-24">
-        <h2 className="text-2xl font-semibold">You may also like</h2>
-        <div className="mt-6 grid gap-6 sm:grid-cols-3">
+        <h2>You may also like</h2>
+        <div className="mt-8 grid gap-6 sm:grid-cols-3">
           {related.map((p) => (
             <Link
               key={p.slug}
               to="/products/$slug"
               params={{ slug: p.slug }}
-              className="group rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-lg"
+              className="group rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-lg"
             >
               <img
                 src={p.image}
@@ -275,8 +300,8 @@ function ProductDetailView({ product }: { product: ProductWithImages }) {
                 height={480}
                 className="mx-auto aspect-square max-h-48 w-full rounded-lg object-contain"
               />
-              <h3 className="mt-4 font-semibold">{p.name}</h3>
-              <p className="text-sm text-muted-foreground">{p.tagline}</p>
+              <h3 className="mt-5 text-xl font-semibold">{p.name}</h3>
+              <p className="mt-2 text-base text-muted-foreground">{p.tagline}</p>
             </Link>
           ))}
         </div>

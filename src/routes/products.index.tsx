@@ -28,21 +28,21 @@ export const Route = createFileRoute("/products/")({
 function ProductsPage() {
   const { products: visibleProducts } = Route.useLoaderData();
   return (
-    <div className="container-page py-14">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Shop</p>
-      <h1 className="mt-2 text-4xl font-semibold">All products</h1>
-      <p className="mt-3 max-w-2xl text-muted-foreground">
+    <div className="container-page py-16 md:py-20">
+      <p className="eyebrow">Shop</p>
+      <h1 className="mt-3">All products</h1>
+      <p className="lead mt-4 max-w-2xl">
         Five product lines with single bottles, multi-packs and Better Together bundles. Free
         shipping on orders over ₱3,000 anywhere in the Philippines.
       </p>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {visibleProducts.map((p) => (
           <Link
             key={p.slug}
             to="/products/$slug"
             params={{ slug: p.slug }}
-            className="group rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-lg"
+            className="group rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-lg"
           >
             <div className="overflow-hidden rounded-lg bg-muted/40">
               <img
@@ -54,10 +54,14 @@ function ProductsPage() {
                 className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             </div>
-            <h2 className="mt-4 text-lg font-semibold">{p.name}</h2>
-            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.tagline}</p>
-            <p className="mt-3 font-semibold text-foreground">From {peso(productFromPrice(p))}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h2 className="mt-5 text-xl font-semibold">{p.name}</h2>
+            <p className="mt-2 line-clamp-2 text-base leading-relaxed text-muted-foreground">
+              {p.tagline}
+            </p>
+            <p className="mt-4 text-lg font-semibold text-foreground">
+              From {peso(productFromPrice(p))}
+            </p>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {p.variants.length} bundle{p.variants.length > 1 ? "s" : ""} available
             </p>
           </Link>

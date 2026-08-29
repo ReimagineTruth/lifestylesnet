@@ -16,6 +16,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FdaRouteImport } from './routes/fda'
 import { Route as OpportunityRouteImport } from './routes/opportunity'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -57,6 +58,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FdaRoute = FdaRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/fda': typeof FdaRoute
   '/opportunity': typeof OpportunityRoute
   '/privacy': typeof PrivacyRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/fda': typeof FdaRoute
   '/opportunity': typeof OpportunityRoute
   '/privacy': typeof PrivacyRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/fda': typeof FdaRoute
   '/opportunity': typeof OpportunityRoute
   '/privacy': typeof PrivacyRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/faq'
     | '/fda'
     | '/opportunity'
     | '/privacy'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/faq'
     | '/fda'
     | '/opportunity'
     | '/privacy'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/faq'
     | '/fda'
     | '/opportunity'
     | '/privacy'
@@ -203,6 +215,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
+  FaqRoute: typeof FaqRoute
   FdaRoute: typeof FdaRoute
   OpportunityRoute: typeof OpportunityRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -261,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fda': {
@@ -323,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
+  FaqRoute: FaqRoute,
   FdaRoute: FdaRoute,
   OpportunityRoute: OpportunityRoute,
   PrivacyRoute: PrivacyRoute,
