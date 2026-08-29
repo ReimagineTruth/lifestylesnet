@@ -68,6 +68,8 @@ export function Footer() {
             { to: "/about", label: "About Lifestyles" },
             { to: "/opportunity", label: "Licensee opportunity" },
             { to: "/contact", label: "Contact us" },
+            { to: "/terms", label: "Terms of Service" },
+            { to: "/privacy", label: "Privacy Policy" },
           ]}
         />
         <div>
@@ -87,7 +89,17 @@ export function Footer() {
       <div className="border-t border-border">
         <div className="container-page flex flex-col gap-2 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Lifestyles Philippines. All rights reserved.</p>
-          <p>No approved therapeutic claims. Products vary by market.</p>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Link to="/terms" className="hover:text-foreground">
+              Terms
+            </Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/privacy" className="hover:text-foreground">
+              Privacy
+            </Link>
+            <span aria-hidden="true">·</span>
+            <span>No approved therapeutic claims. Products vary by market.</span>
+          </p>
         </div>
       </div>
     </footer>

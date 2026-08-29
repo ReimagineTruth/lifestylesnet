@@ -13,6 +13,7 @@ export const productImageUrls: Record<string, string> = {
   cardiolife: `${BUNDLE_IMG}/cardio-1540ph.png`,
   fibrelife: `${BUNDLE_IMG}/fibre-1038ph.png`,
   "better-together-pack": `${BUNDLE_IMG}/btp-6999.png`,
+  "test-checkout": `${BUNDLE_IMG}/intra-1201ph.png`,
 };
 
 /** Maps catalog imageKey → display URL. Singles and bundles use local 480px PNGs in /public/bundles. */
@@ -28,6 +29,7 @@ export const bundleImageUrls: Record<string, string> = {
   "cardio-1540": `${BUNDLE_IMG}/cardio-1540.png`,
   "fibre-1038ph": `${BUNDLE_IMG}/fibre-1038ph.png`,
   "fibre-1038": `${BUNDLE_IMG}/fibre-1038.png`,
+  "test-checkout-10ph": `${BUNDLE_IMG}/intra-1201ph.png`,
   "btp-6999": `${BUNDLE_IMG}/btp-6999.png`,
   "btp-6999c": `${BUNDLE_IMG}/btp-6999c.png`,
 };

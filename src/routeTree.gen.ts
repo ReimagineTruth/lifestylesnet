@@ -17,6 +17,8 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as OpportunityRouteImport } from './routes/opportunity'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
@@ -61,6 +63,16 @@ const OpportunityRoute = OpportunityRouteImport.update({
   path: '/opportunity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrderIdRoute = OrderIdRouteImport.update({
   id: '/order/$id',
   path: '/order/$id',
@@ -86,6 +98,8 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/opportunity': typeof OpportunityRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/order/$id': typeof OrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/products/': typeof ProductsIndexRoute
@@ -99,6 +113,8 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/opportunity': typeof OpportunityRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/order/$id': typeof OrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/products': typeof ProductsIndexRoute
@@ -113,6 +129,8 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/opportunity': typeof OpportunityRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/order/$id': typeof OrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/products/': typeof ProductsIndexRoute
@@ -128,6 +146,8 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/opportunity'
+    | '/privacy'
+    | '/terms'
     | '/order/$id'
     | '/products/$slug'
     | '/products/'
@@ -141,6 +161,8 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/opportunity'
+    | '/privacy'
+    | '/terms'
     | '/order/$id'
     | '/products/$slug'
     | '/products'
@@ -154,6 +176,8 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/opportunity'
+    | '/privacy'
+    | '/terms'
     | '/order/$id'
     | '/products/$slug'
     | '/products/'
@@ -168,6 +192,8 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
   OpportunityRoute: typeof OpportunityRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   OrderIdRoute: typeof OrderIdRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
@@ -231,6 +257,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpportunityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/order/$id': {
       id: '/order/$id'
       path: '/order/$id'
@@ -264,6 +304,8 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
   OpportunityRoute: OpportunityRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   OrderIdRoute: OrderIdRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   ProductsIndexRoute: ProductsIndexRoute,

@@ -397,5 +397,34 @@ export const catalogProducts: Product[] = [
     ingredients: "See individual product pages for Intra, Nutria Plus, CardioLife and FibreLife.",
     directions: "Follow the directions on each product label for daily use.",
   },
+  {
+    slug: "test-checkout",
+    cateId: 99,
+    name: "Test Checkout (₱10)",
+    tagline: "Payment testing only — not for resale",
+    image: "/bundles/intra-1201ph.png",
+    variants: [
+      {
+        id: "test-checkout-10ph",
+        code: "TEST10PH",
+        label: "1 test item",
+        points: 0,
+        price: 10,
+        size: "Single test unit",
+        imageKey: "intra-1201ph",
+      },
+    ],
+    short: "Internal ₱10 item for testing checkout, QR Ph, PayPal, and card payments.",
+    description: [
+      "Use this product to verify the full checkout flow without placing a full-price order.",
+      "Hide it anytime from Admin → Catalogue when you are done testing.",
+    ],
+    benefits: [
+      "Fixed ₱10 price for quick payment tests",
+      "Works with COD, QR Ph, PayMongo, and PayPal",
+    ],
+    ingredients: "N/A — internal test item only.",
+    directions: "Add to cart and complete checkout to test payments.",
+  },
 ];
 

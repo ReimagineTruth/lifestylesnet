@@ -15,12 +15,14 @@ import { useServerFn } from "@tanstack/react-start";
 import type { AdminDashboardStats, Order, OrderStatus } from "@/lib/orders";
 import { useAllFeedback } from "@/hooks/use-feedback";
 import { tl } from "@/lib/tagalog";
-import { allVariants, peso } from "@/lib/products";
+import { Switch } from "@/components/ui/switch";
+import { allVariants, isTestProductSlug, peso } from "@/lib/products";
 import {
   getAdminDashboardFn,
   listAllOrdersFn,
   updateOrderAdminFn,
 } from "@/lib/orders.server";
+import { getTestProductVisibleFn, setTestProductVisibleFn } from "@/lib/settings.server";
 import { listFeedbackThreadsFn, sendFeedbackMessageFn } from "@/lib/feedback.server";
 
 const ADMIN_TOKEN_KEY = "lifestyles-ph-admin-token";
@@ -320,7 +322,7 @@ export function AdminPortal({ token, onSignOut }: Props) {
             />
           )}
 
-          {tab === "catalogue" && <CatalogueTab orders={orders} />}
+          {tab === "catalogue" && <CatalogueTab orders={orders} token={token} />}
         </main>
       </div>
 
@@ -698,14 +700,53 @@ function FeedbackTab({
   );
 }
 
-function CatalogueTab({ orders }: { orders: Order[] }) {
+function CatalogueTab({ orders, token }: { orders: Order[]; token: string }) {
   const catalogue = allVariants();
+  const fetchTestVisible = useServerFn(getTestProductVisibleFn);
+  const saveTestVisible = useServerFn(setTestProductVisibleFn);
+  const [testProductVisible, setTestProductVisible] = useState(true);
+  const [savingTestToggle, setSavingTestToggle] = useState(false);
+
+  useEffect(() => {
+    void fetchTestVisible()
+      .then(({ visible }) => setTestProductVisible(visible))
+      .catch(() => {});
+  }, [fetchTestVisible]);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold">Catalogue</h1>
         <p className="mt-1 text-muted-foreground">All product bundles and sales from SQL.</p>
       </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+        <div>
+          <p className="text-sm font-semibold">₱10 test product on shop</p>
+          <p className="text-xs text-muted-foreground">
+            Shows &quot;Test Checkout (₱10)&quot; on the storefront for payment testing. Turn off
+            when you are done.
+          </p>
+        </div>
+        <Switch
+          checked={testProductVisible}
+          disabled={savingTestToggle}
+          onCheckedChange={(checked) => {
+            setSavingTestToggle(true);
+            void saveTestVisible({ data: { token, visible: checked } })
+              .then(({ visible }) => {
+                setTestProductVisible(visible);
+                toast.success(
+                  visible ? "Test product is visible on the shop." : "Test product hidden from shop.",
+                );
+              })
+              .catch((err: Error) => toast.error(err.message || "Could not update setting."))
+              .finally(() => setSavingTestToggle(false));
+          }}
+          aria-label="Show test product on shop"
+        />
+      </div>
+
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
@@ -727,9 +768,14 @@ function CatalogueTab({ orders }: { orders: Order[] }) {
               const units = soldLines.reduce((n, l) => n + l.qty, 0);
               const rev = soldLines.reduce((n, l) => n + l.qty * l.price, 0);
               return (
-                <tr key={variant.id}>
+                <tr key={variant.id} className={isTestProductSlug(product.slug) ? "bg-amber-50/50" : ""}>
                   <td className="px-4 py-3 font-medium">
                     {product.name}
+                    {isTestProductSlug(product.slug) && (
+                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-900">
+                        Test
+                      </span>
+                    )}
                     <span className="block text-xs font-normal text-muted-foreground">{variant.label}</span>
                   </td>
                   <td className="px-4 py-3 uppercase text-muted-foreground">{variant.code}</td>

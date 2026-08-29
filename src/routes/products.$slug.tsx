@@ -15,6 +15,8 @@ import {
   type ProductWithImages,
 } from "@/lib/products";
 import { fetchProduct } from "@/lib/products.server";
+import { getTestProductVisibleFn } from "@/lib/settings.server";
+import { isTestProductSlug } from "@/lib/products";
 import { tl } from "@/lib/tagalog";
 
 async function loadProduct(slug: string): Promise<ProductWithImages | undefined> {
@@ -30,6 +32,10 @@ async function loadProduct(slug: string): Promise<ProductWithImages | undefined>
 
 export const Route = createFileRoute("/products/$slug")({
   loader: async ({ params }) => {
+    if (isTestProductSlug(params.slug)) {
+      const { visible } = await getTestProductVisibleFn();
+      if (!visible) throw notFound();
+    }
     const product = await loadProduct(params.slug);
     if (!product || product.variants.length === 0) throw notFound();
     return { product };

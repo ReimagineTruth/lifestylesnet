@@ -1,7 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { peso, productFromPrice, products } from "@/lib/products";
+import { filterVisibleProducts, peso, productFromPrice, products } from "@/lib/products";
+import { getTestProductVisibleFn } from "@/lib/settings.server";
 
 export const Route = createFileRoute("/products/")({
+  loader: async () => {
+    const { visible } = await getTestProductVisibleFn();
+    return { products: filterVisibleProducts(products, visible) };
+  },
   head: () => ({
     meta: [
       { title: "Shop Wellness Products | Lifestyles Philippines" },
@@ -21,6 +26,7 @@ export const Route = createFileRoute("/products/")({
 });
 
 function ProductsPage() {
+  const { products: visibleProducts } = Route.useLoaderData();
   return (
     <div className="container-page py-14">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -33,7 +39,7 @@ function ProductsPage() {
       </p>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {products.map((p) => (
+        {visibleProducts.map((p) => (
           <Link
             key={p.slug}
             to="/products/$slug"

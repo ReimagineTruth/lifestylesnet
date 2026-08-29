@@ -1,8 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Leaf, Truck, ShieldCheck } from "lucide-react";
-import { products, peso, productFromPrice } from "@/lib/products";
+import { filterVisibleProducts, products, peso, productFromPrice } from "@/lib/products";
+import { getTestProductVisibleFn } from "@/lib/settings.server";
 
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    const { visible } = await getTestProductVisibleFn();
+    return { products: filterVisibleProducts(products, visible) };
+  },
   head: () => ({
     meta: [
       { title: "Lifestyles Philippines | Live Better. Every Day." },
@@ -25,6 +30,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { products: visibleProducts } = Route.useLoaderData();
   return (
     <>
       {/* Hero */}
@@ -120,7 +126,7 @@ function Index() {
           </div>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((p) => (
+            {visibleProducts.map((p) => (
               <Link
                 key={p.slug}
                 to="/products/$slug"
