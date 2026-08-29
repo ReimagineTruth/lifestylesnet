@@ -95,6 +95,7 @@ function runMigrations(database: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_feedback_messages_thread ON feedback_messages(thread_id);
   `);
   ensureColumn(database, "orders", "paymongo_intent_id", "TEXT");
+  ensureColumn(database, "orders", "paypal_order_id", "TEXT");
   ensureColumn(database, "orders", "bank_code", "TEXT");
 }
 

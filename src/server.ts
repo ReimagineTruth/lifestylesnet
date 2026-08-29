@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handlePaymongoWebhook } from "./lib/paymongo-core.server";
+import { handlePayPalWebhook } from "./lib/paypal-core.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -50,6 +51,9 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/paymongo/webhook" && request.method === "POST") {
       return handlePaymongoWebhook(request);
+    }
+    if (url.pathname === "/api/paypal/webhook" && request.method === "POST") {
+      return handlePayPalWebhook(request);
     }
 
     try {

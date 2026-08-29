@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { DeliveryAddressForm } from "@/components/checkout/DeliveryAddressForm";
+import { PayPalCheckoutPanel } from "@/components/checkout/PayPalCheckoutPanel";
 import { useCart } from "@/lib/cart";
 import { loadCustomerEmail, saveCustomerEmail } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT } from "@/lib/orders";
@@ -40,8 +41,8 @@ const schema = z.object({
   notes: z.string().trim().max(500).optional(),
 });
 
-type Step = "delivery" | "payment" | "qr" | "done";
-type PayChoice = "cod" | "qr_ph" | "bank" | "card";
+type Step = "delivery" | "payment" | "qr" | "paypal" | "done";
+type PayChoice = "cod" | "qr_ph" | "bank" | "paypal";
 
 type FormState = {
   name: string;
@@ -153,7 +154,7 @@ function CheckoutPage() {
     );
   }
 
-  if (lines.length === 0 && step !== "done" && step !== "qr") {
+  if (lines.length === 0 && step !== "done" && step !== "qr" && step !== "paypal") {
     return (
       <div className="container-page py-24 text-center">
         <h1 className="text-3xl font-semibold">Your cart is empty</h1>
@@ -212,8 +213,8 @@ function CheckoutPage() {
             ? "cod"
             : payChoice === "bank"
               ? "bank"
-              : payChoice === "card"
-                ? "card"
+              : payChoice === "paypal"
+                ? "paypal"
                 : "qr_ph",
         ...(payChoice === "bank" ? { bankCode } : {}),
         ...(payChoice === "qr_ph"
@@ -268,6 +269,12 @@ function CheckoutPage() {
           return;
         }
 
+        if (payChoice === "paypal") {
+          setStep("paypal");
+          toast.success("Order created — complete payment with PayPal.");
+          return;
+        }
+
         clear();
         toast.success(tl.toast.orderPlaced(order.id));
         setPaid(true);
@@ -279,7 +286,7 @@ function CheckoutPage() {
       .finally(() => setSubmitting(false));
   }
 
-  const stepIndex = STEPS.findIndex((s) => s.id === step);
+  const stepIndex = STEPS.findIndex((s) => s.id === (step === "paypal" ? "qr" : step));
 
   return (
     <div className="container-page py-10">
@@ -413,16 +420,21 @@ function CheckoutPage() {
                   )}
                   <label
                     className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${
-                      payChoice === "card" ? "border-brand bg-brand-soft" : "border-border"
+                      payChoice === "paypal" ? "border-brand bg-brand-soft" : "border-border"
                     }`}
                   >
                     <input
                       type="radio"
-                      checked={payChoice === "card"}
-                      onChange={() => setPayChoice("card")}
+                      checked={payChoice === "paypal"}
+                      onChange={() => setPayChoice("paypal")}
                       className="accent-brand"
                     />
-                    <span className="text-sm font-semibold">Credit / debit card</span>
+                    <span>
+                      <span className="block text-sm font-semibold">PayPal or card</span>
+                      <span className="text-sm text-muted-foreground">
+                        PayPal wallet, debit/credit card, and other PayPal checkout options.
+                      </span>
+                    </span>
                   </label>
                 </div>
               </div>
@@ -439,8 +451,31 @@ function CheckoutPage() {
                     ? "Place order"
                     : payChoice === "qr_ph"
                       ? `Pay ${peso(total)} · Show QR`
-                      : "Continue to PayMongo"}
+                      : payChoice === "paypal"
+                        ? "Continue to PayPal"
+                        : "Continue to PayMongo"}
               </button>
+            </section>
+          )}
+
+          {step === "paypal" && orderId && (
+            <section className="rounded-xl border border-border bg-card p-6">
+              <h2 className="text-lg font-semibold">Pay with PayPal</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Order {orderId} · {peso(summaryTotal)}
+              </p>
+              <div className="mt-6">
+                <PayPalCheckoutPanel
+                  orderId={orderId}
+                  total={summaryTotal}
+                  onPaid={() => {
+                    clear();
+                    setPaid(true);
+                    setStep("done");
+                  }}
+                  onCancel={() => setStep("payment")}
+                />
+              </div>
             </section>
           )}
 

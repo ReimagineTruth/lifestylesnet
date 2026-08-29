@@ -35,6 +35,7 @@ const paymentMethods = [
   "billease",
   "bank",
   "card",
+  "paypal",
 ] as const;
 
 const paymentMethodLabels: Record<(typeof paymentMethods)[number], string> = {
@@ -47,6 +48,7 @@ const paymentMethodLabels: Record<(typeof paymentMethods)[number], string> = {
   billease: "BillEase",
   bank: "Online banking",
   card: "Card",
+  paypal: "PayPal",
 };
 
 type Tab = "overview" | "orders" | "customers" | "feedback" | "catalogue";
@@ -374,6 +376,7 @@ function OverviewTab({
             <div className="flex justify-between"><dt>Maya</dt><dd>{stats.byPayment.maya}</dd></div>
             <div className="flex justify-between"><dt>Online banking</dt><dd>{stats.byPayment.bank}</dd></div>
             <div className="flex justify-between"><dt>Card</dt><dd>{stats.byPayment.card}</dd></div>
+            <div className="flex justify-between"><dt>PayPal</dt><dd>{stats.byPayment.paypal}</dd></div>
             <div className="flex justify-between border-t border-border pt-2 font-semibold">
               <dt>Cancelled</dt><dd>{stats.cancelled}</dd>
             </div>
@@ -771,6 +774,7 @@ function OrderDrawer({
     billease: "BillEase (PayMongo)",
     bank: "Online banking (PayMongo)",
     card: "Card (PayMongo)",
+    paypal: "PayPal or card",
   };
 
   return (

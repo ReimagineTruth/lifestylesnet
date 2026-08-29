@@ -32,6 +32,7 @@ export const orders = sqliteTable("orders", {
   paymentMethod: text("payment_method").notNull(),
   paymentReference: text("payment_reference"),
   paymongoIntentId: text("paymongo_intent_id"),
+  paypalOrderId: text("paypal_order_id"),
   bankCode: text("bank_code"),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),

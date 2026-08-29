@@ -31,6 +31,7 @@ const createOrderInput = z.object({
     "billease",
     "bank",
     "card",
+    "paypal",
   ]),
   bankCode: z.enum(["bpi", "ubp", "bdo", "landbank", "metrobank"]).optional(),
   preferredProvider: z.string().optional(),
@@ -66,6 +67,7 @@ function mapOrder(
     paymentMethod: row.paymentMethod as Order["paymentMethod"],
     ...(row.paymentReference ? { reference: row.paymentReference } : {}),
     ...(row.paymongoIntentId ? { paymongoIntentId: row.paymongoIntentId } : {}),
+    ...(row.paypalOrderId ? { paypalOrderId: row.paypalOrderId } : {}),
     ...(row.bankCode ? { bankCode: row.bankCode as BankCode } : {}),
     lines: lines.map(
       (l): OrderLine => ({
@@ -111,7 +113,7 @@ export const createOrderFn = createServerFn({ method: "POST" })
     let paymongoIntentId: string | null = null;
     let paymentResult: Awaited<ReturnType<typeof createPaymongoPayment>> | null = null;
 
-    if (data.paymentMethod !== "cod") {
+    if (data.paymentMethod !== "cod" && data.paymentMethod !== "paypal") {
       const returnUrl = `${siteUrl()}/order/${orderId}?payment=return`;
       const extraMetadata: Record<string, string> = {};
       if (data.preferredProvider) {
@@ -294,6 +296,7 @@ export const getAdminDashboardFn = createServerFn({ method: "GET" })
         billease: rows.filter((r) => r.paymentMethod === "billease").length,
         bank: rows.filter((r) => r.paymentMethod === "bank").length,
         card: rows.filter((r) => r.paymentMethod === "card").length,
+        paypal: rows.filter((r) => r.paymentMethod === "paypal").length,
       },
     };
   });

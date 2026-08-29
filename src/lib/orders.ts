@@ -18,7 +18,8 @@ export type PaymentMethod =
   | "shopee_pay"
   | "billease"
   | "bank"
-  | "card";
+  | "card"
+  | "paypal";
 
 export type Order = {
   id: string;
@@ -36,6 +37,7 @@ export type Order = {
   paymentMethod: PaymentMethod;
   reference?: string;
   paymongoIntentId?: string;
+  paypalOrderId?: string;
   bankCode?: string;
   lines: OrderLine[];
   subtotal: number;
@@ -64,6 +66,7 @@ export type AdminDashboardStats = {
     billease: number;
     bank: number;
     card: number;
+    paypal: number;
   };
 };
 

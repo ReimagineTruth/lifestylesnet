@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { confirmPaymongoPaymentFn, fetchOrderQrFn } from "@/lib/paymongo.server";
+import { capturePayPalPaymentFn } from "@/lib/paypal.server";
 import { loadOrderQrPhSession, legacyQrKey } from "@/lib/qrPhPaySession";
 import { getOrderFn } from "@/lib/orders.server";
 import type { PaymentMethod } from "@/lib/orders";
@@ -41,6 +42,7 @@ const methodLabel: Record<PaymentMethod, string> = {
   billease: "BillEase (PayMongo)",
   bank: "Online banking (PayMongo)",
   card: "Card (PayMongo)",
+  paypal: "PayPal or card",
 };
 
 function OrderPage() {
@@ -48,6 +50,7 @@ function OrderPage() {
   const { id } = Route.useParams();
   const search = Route.useSearch();
   const confirmPayment = useServerFn(confirmPaymongoPaymentFn);
+  const capturePayPalPayment = useServerFn(capturePayPalPaymentFn);
   const fetchOrderQr = useServerFn(fetchOrderQrFn);
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -106,6 +109,20 @@ function OrderPage() {
     if (search.status === "cancel") toast.error("Payment was cancelled.");
   }, [search.status]);
 
+  useEffect(() => {
+    if (!order || order.paymentMethod !== "paypal" || paid) return;
+    if (search.payment !== "return" || search.status !== "success") return;
+
+    void capturePayPalPayment({ data: { orderId: order.id } })
+      .then((result) => {
+        if (result.paid) {
+          setPaid(true);
+          toast.success("Payment confirmed via PayPal!");
+        }
+      })
+      .catch(() => {});
+  }, [order, capturePayPalPayment, paid, search.payment, search.status]);
+
   if (!order) {
     return (
       <div className="container-page py-24 text-center">
@@ -147,6 +164,8 @@ function OrderPage() {
           <p className="mt-2 text-sm text-amber-800">
             {qrImage
               ? "I-scan ang QR code sa ibaba gamit ang GCash, Maya, o anumang QR Ph app."
+              : order.paymentMethod === "paypal"
+                ? "Kumpletohin ang bayad sa PayPal. Awtomatikong mag-u-update ang status pag na-confirm."
               : search.payment === "return"
                 ? "Bumalik ka mula sa bangko o e-wallet. Kino-confirm namin ang bayad…"
                 : "Kumpletohin ang bayad sa PayMongo. Awtomatikong mag-u-update ang status."}
