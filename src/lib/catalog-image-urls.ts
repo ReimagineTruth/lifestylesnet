@@ -20,9 +20,12 @@ export const productImageUrls: Record<string, string> = {
 export const bundleImageUrls: Record<string, string> = {
   "intra-1201ph": `${BUNDLE_IMG}/intra-1201ph.png`,
   "intra-1201": `${BUNDLE_IMG}/intra-1201.jpg`,
-  "intra-1231": `${BUNDLE_IMG}/intra-1231.png`,
-  "intra-1232": `${BUNDLE_IMG}/intra-1232.png`,
-  "intra-1234": `${BUNDLE_IMG}/intra-1234.png`,
+  "intra-1231":
+    "https://m.media-amazon.com/images/I/81Kn+FXl6BL._AC_UL450_SY450_QL70_.jpg",
+  "intra-1232":
+    "https://cdn.myshoptet.com/usr/shop.intra-lifestyles.net/user/shop/big/19-1_intra-trio-sirup-0-kapsle-3.jpg?ff=1&x=1024&y=768&q=85&ts=5bbcea27&sg=161563f2",
+  "intra-1234":
+    "https://cdn.myshoptet.com/usr/shop.intra-lifestyles.net/user/shop/big/19-2_intra-trio-sirup-1-kapsle-2.jpg?ff=1&x=1024&y=768&q=85&ts=5bbcea28&sg=161563f2",
   "nutria-1502ph": `${BUNDLE_IMG}/nutria-1502ph.png`,
   "nutria-1502": `${BUNDLE_IMG}/nutria-1502.png`,
   "cardio-1540ph": `${BUNDLE_IMG}/cardio-1540ph.png`,
