@@ -1,4 +1,4 @@
-import { count, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { catalogProducts } from "@/lib/catalog-seed-data";
 import { TEST_PRODUCT_SETTING_KEY, TEST_PRODUCT_SLUG } from "@/lib/test-product";
 import type { AppDb } from "./types";
