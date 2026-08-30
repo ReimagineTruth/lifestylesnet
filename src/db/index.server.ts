@@ -5,6 +5,7 @@ export type { AppDb } from "./types";
 
 async function resolveDatabaseTarget() {
   try {
+    // @ts-expect-error - virtual module only available in the Cloudflare Worker runtime
     const { env } = await import("cloudflare:workers");
     const d1 = (env as { DB?: unknown }).DB ?? null;
     return { d1, onCloudflare: true as const };
