@@ -17,6 +17,7 @@ export default defineConfig({
       deployConfig: true,
       nodeCompat: true,
     },
+    serverAssets: [{ baseName: "drizzle", dir: "./drizzle" }],
   },
   vite: {
     ssr: {

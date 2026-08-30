@@ -12,7 +12,9 @@
     "format": "prettier --write .",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx src/db/seed-cli.ts"
+    "db:seed": "tsx src/db/seed-cli.ts",
+    "db:d1:create": "wrangler d1 create lifestylesnet --binding DB --update-config",
+    "db:d1:migrate:remote": "wrangler d1 migrations apply lifestylesnet --remote"
   },
   "overrides": {
     "rolldown": "1.2.1"

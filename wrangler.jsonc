@@ -8,7 +8,9 @@
     {
       "binding": "DB",
       "database_name": "lifestylesnet",
-      "migrations_dir": "drizzle"
+      // Required for production — run: npm run db:d1:create (after wrangler login)
+      "migrations_dir": "drizzle",
+      "preview_database_id": "local-lifestylesnet"
     }
   ]
 }

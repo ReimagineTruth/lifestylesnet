@@ -48,6 +48,9 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // Nitro also sets this; keep in sync for custom webhook routes before the Nitro handler runs.
+    (globalThis as { __env__?: unknown }).__env__ = env;
+
     const url = new URL(request.url);
     if (url.pathname === "/api/paymongo/webhook" && request.method === "POST") {
       return handlePaymongoWebhook(request);
