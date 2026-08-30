@@ -5,8 +5,8 @@ export const fetchProducts = createServerFn({ method: "GET" }).handler(async () 
     const { dbListProducts } = await import("./db-mapper.server");
     return await dbListProducts();
   } catch {
-    const { PRODUCTS } = await import("./catalog-data");
-    return PRODUCTS;
+    const { catalogProducts } = await import("./catalog-data");
+    return catalogProducts;
   }
 });
 
