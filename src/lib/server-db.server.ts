@@ -4,3 +4,17 @@ export async function withDb() {
   const db = await ensureDbReady();
   return { db, schema };
 }
+
+/**
+ * Same as withDb(), but returns null instead of throwing when no database is
+ * available (e.g. edge deploy without a D1 binding). Use this for public read
+ * paths that can safely fall back to the static catalogue/defaults so the
+ * storefront still renders instead of returning a 500.
+ */
+export async function tryWithDb() {
+  try {
+    return await withDb();
+  } catch {
+    return null;
+  }
+}
