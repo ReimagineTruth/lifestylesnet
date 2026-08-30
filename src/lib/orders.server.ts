@@ -5,7 +5,7 @@ import type { Order, OrderLine, OrderStatus } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT, newOrderId } from "@/lib/orders";
 import { isAdmin, requireAdmin, requireCustomer } from "./auth.server";
 import type { BankCode, PaymongoCheckoutMethod } from "./paymongo";
-import { withDb } from "@/lib/server-db.server";
+import { tryWithDb, withDb } from "@/lib/server-db.server";
 import { newId } from "@/lib/id";
 
 type OrderRow = Awaited<ReturnType<typeof withDb>>["schema"]["orders"]["$inferSelect"];
@@ -253,7 +253,9 @@ export const createOrderFn = createServerFn({ method: "POST" })
 export const getOrderFn = createServerFn({ method: "GET" })
   .validator((id: string) => id)
   .handler(async ({ data: id }) => {
-    const { db, schema } = await withDb();
+    const conn = await tryWithDb();
+    if (!conn) return null;
+    const { db, schema } = conn;
     const [row] = await db.select().from(schema.orders).where(eq(schema.orders.id, id));
     if (!row) return null;
     const lines = await db

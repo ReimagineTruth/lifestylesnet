@@ -1,15 +1,27 @@
 import { createServerFn } from "@tanstack/react-start";
 
 export const fetchProducts = createServerFn({ method: "GET" }).handler(async () => {
-  const { dbListProducts } = await import("./db-mapper.server");
-  return dbListProducts();
+  try {
+    const { dbListProducts } = await import("./db-mapper.server");
+    return await dbListProducts();
+  } catch {
+    const { catalogProducts } = await import("./catalog-data");
+    return catalogProducts;
+  }
 });
 
 export const fetchProduct = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    const { dbGetProduct } = await import("./db-mapper.server");
-    return (await dbGetProduct(slug)) ?? null;
+    try {
+      const { dbGetProduct } = await import("./db-mapper.server");
+      const fromDb = await dbGetProduct(slug);
+      if (fromDb) return fromDb;
+    } catch {
+      // DB unavailable — fall back to the static catalogue.
+    }
+    const { getProduct } = await import("./catalog-data");
+    return getProduct(slug) ?? null;
   });
 
 export const loadProductForPageFn = createServerFn({ method: "GET" })

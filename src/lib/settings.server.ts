@@ -9,13 +9,15 @@ import {
   serializePaymentMethodsEnabled,
   type CheckoutPayChoice,
 } from "@/lib/payment-methods";
-import { withDb } from "@/lib/server-db.server";
+import { tryWithDb, withDb } from "@/lib/server-db.server";
 import { TEST_PRODUCT_SETTING_KEY } from "@/lib/test-product";
 
 export { TEST_PRODUCT_SETTING_KEY };
 
 async function readTestProductVisible() {
-  const { db, schema } = await withDb();
+  const conn = await tryWithDb();
+  if (!conn) return true;
+  const { db, schema } = conn;
   const { eq } = await import("drizzle-orm");
   const [row] = await db
     .select()
@@ -63,7 +65,9 @@ export const setTestProductVisibleFn = createServerFn({ method: "POST" })
   });
 
 async function readPaymentMethodsAdminEnabled() {
-  const { db, schema } = await withDb();
+  const conn = await tryWithDb();
+  if (!conn) return parsePaymentMethodsEnabled(undefined);
+  const { db, schema } = conn;
   const { eq } = await import("drizzle-orm");
   const [row] = await db
     .select()

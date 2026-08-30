@@ -3,13 +3,14 @@ import { BASE_SCHEMA_SQL, ORDER_COLUMN_MIGRATIONS } from "./migrations-sql";
 import * as schema from "./schema";
 import { seedIfEmpty } from "./seed";
 
+type D1Statement = {
+  bind(...values: unknown[]): D1Statement;
+  run(): Promise<unknown>;
+  all<T = unknown>(): Promise<{ results?: T[] }>;
+};
+
 type D1Database = {
-  prepare(query: string): {
-    bind(...values: unknown[]): {
-      run(): Promise<unknown>;
-      all<T = unknown>(): Promise<{ results?: T[] } & T[]>;
-    };
-  };
+  prepare(query: string): D1Statement;
   exec(query: string): Promise<unknown>;
 };
 
@@ -19,8 +20,10 @@ let migrated = false;
 
 async function ensureColumn(d1: D1Database, table: string, column: string, type: string) {
   const result = await d1.prepare(`PRAGMA table_info(${table})`).all<{ name: string }>();
-  const cols = Array.isArray(result) ? result : (result.results ?? []);
-  if (!cols.some((c) => c.name === column)) {
+  const cols: { name: string }[] = Array.isArray(result)
+    ? (result as { name: string }[])
+    : (result.results ?? []);
+  if (!cols.some((c: { name: string }) => c.name === column)) {
     await d1.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
   }
 }

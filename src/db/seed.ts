@@ -1,4 +1,4 @@
-import { count, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { catalogProducts } from "@/lib/catalog-seed-data";
 import { TEST_PRODUCT_SETTING_KEY, TEST_PRODUCT_SLUG } from "@/lib/test-product";
 import type { AppDb } from "./types";
@@ -62,8 +62,8 @@ export async function ensureDefaultSettings(db: AppDb) {
 }
 
 export async function seedIfEmpty(db: AppDb) {
-  const [row] = await db.select({ value: count() }).from(schema.products);
-  if (row && row.value > 0) {
+  const [row] = await db.select().from(schema.products).limit(1);
+  if (row) {
     await ensureTestProductCatalog(db);
     await ensureDefaultSettings(db);
     return;
